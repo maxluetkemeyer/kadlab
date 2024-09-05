@@ -1,3 +1,11 @@
+# Sprint 0
+
+```bash
+docker build . -t kadlab
+docker compose up -d
+docker exec kadlab-kademliaNodes-1 ping kadlab-kademliaNodes-2
+```
+
 ## Some tips
 
 Here's some advice I like to give students during sprint 0.
