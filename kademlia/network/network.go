@@ -1,4 +1,6 @@
-package kademlia
+package network
+
+import "d7024e_group04/kademlia/contact"
 
 type Network struct {
 }
@@ -10,11 +12,11 @@ func Listen(ip string, port int) {
 	// TODO
 }
 
-func (network *Network) SendPingMessage(contact *Contact) {
+func (network *Network) SendPingMessage(contact *contact.Contact) {
 	// TODO
 }
 
-func (network *Network) SendFindContactMessage(contact *Contact) {
+func (network *Network) SendFindContactMessage(contact *contact.Contact) {
 	// TODO
 }
 

@@ -1,4 +1,4 @@
-package kademlia
+package kademliaid
 
 import (
 	"encoding/hex"
