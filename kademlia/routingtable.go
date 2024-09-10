@@ -1,23 +1,19 @@
 package kademlia
 
-// TODO: do we want to have it declared here?
-// TODO: Add the naming from the paper here
-const bucketSize = 20
-
 // RoutingTable definition
 // keeps a reference contact of me and an array of buckets
 // TODO: Do we want to store our address here?
 // 160 buckets with the current IDLength
 type RoutingTable struct {
 	me      Contact
-	buckets [IDLength * 8]*bucket
+	buckets [IDLength * 8]*Bucket
 }
 
 // NewRoutingTable returns a new instance of a RoutingTable
 func NewRoutingTable(me Contact) *RoutingTable {
 	routingTable := &RoutingTable{}
 	for i := 0; i < IDLength*8; i++ {
-		routingTable.buckets[i] = newBucket()
+		routingTable.buckets[i] = NewBucket()
 	}
 	routingTable.me = me
 	return routingTable
