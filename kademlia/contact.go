@@ -7,6 +7,8 @@ import (
 
 // Contact definition
 // stores the KademliaID, the ip address and the distance
+// 3-tuple mentioned in the paper
+// TODO: It is not like the paper <ip, udp port, node id>, but <id, address(ip+port), distance(maybe cached)>
 type Contact struct {
 	ID       *KademliaID
 	Address  string
@@ -18,39 +20,45 @@ func NewContact(id *KademliaID, address string) Contact {
 	return Contact{id, address, nil}
 }
 
-// CalcDistance calculates the distance to the target and 
+// CalcDistance calculates the distance to the target and
 // fills the contacts distance field
 func (contact *Contact) CalcDistance(target *KademliaID) {
 	contact.distance = contact.ID.CalcDistance(target)
 }
 
 // Less returns true if contact.distance < otherContact.distance
+// TODO: Don't know if we use it in this way, lets see
+// We just compare distances here
+// TODO: It implements the comparable interface or smth like this, for sorting
 func (contact *Contact) Less(otherContact *Contact) bool {
 	return contact.distance.Less(otherContact.distance)
 }
 
 // String returns a simple string representation of a Contact
+// TODO: It should implement the standard toString interface, check this
 func (contact *Contact) String() string {
 	return fmt.Sprintf(`contact("%s", "%s")`, contact.ID, contact.Address)
 }
 
 // ContactCandidates definition
-// stores an array of Contacts
+// stores a slice of Contacts
+// TODO: Don't know why they implemented that, we can just use a slice of contacts
 type ContactCandidates struct {
 	contacts []Contact
 }
 
-// Append an array of Contacts to the ContactCandidates
+// Append a slice of Contacts to the ContactCandidates
 func (candidates *ContactCandidates) Append(contacts []Contact) {
 	candidates.contacts = append(candidates.contacts, contacts...)
 }
 
-// GetContacts returns the first count number of Contacts
+// GetContacts returns the first 'count' number of Contacts
 func (candidates *ContactCandidates) GetContacts(count int) []Contact {
 	return candidates.contacts[:count]
 }
 
 // Sort the Contacts in ContactCandidates
+// TODO: Maybe use slices.sortfunc
 func (candidates *ContactCandidates) Sort() {
 	sort.Sort(candidates)
 }
@@ -61,12 +69,12 @@ func (candidates *ContactCandidates) Len() int {
 }
 
 // Swap the position of the Contacts at i and j
-// WARNING does not check if either i or j is within range
+// TODO: WARNING does not check if either i or j is within range
 func (candidates *ContactCandidates) Swap(i, j int) {
 	candidates.contacts[i], candidates.contacts[j] = candidates.contacts[j], candidates.contacts[i]
 }
 
-// Less returns true if the Contact at index i is smaller than 
+// Less returns true if the Contact at index i is smaller than
 // the Contact at index j
 func (candidates *ContactCandidates) Less(i, j int) bool {
 	return candidates.contacts[i].Less(&candidates.contacts[j])
