@@ -7,6 +7,17 @@ import (
 )
 
 func TestBucket(t *testing.T) {
+	t.Run("New Bucket should be empty", func(t *testing.T) {
+		bucket := NewBucket()
+
+		want := 0
+		got := bucket.list.Len()
+
+		if got != want {
+			t.Errorf("got %d, want %d", got, want)
+		}
+	})
+
 	t.Run("Bucket length", func(t *testing.T) {
 		bucket := NewBucket()
 
