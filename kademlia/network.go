@@ -3,6 +3,9 @@ package kademlia
 type Network struct {
 }
 
+// TODO: Lets start with a simulated network
+// TODO: Define a network interface to have a simulated on and a real one (and maybe a spy test one)
+
 func Listen(ip string, port int) {
 	// TODO
 }
