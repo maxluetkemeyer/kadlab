@@ -1,6 +1,7 @@
-package kademlia
+package contact
 
 import (
+	"d7024e_group04/kademlia/kademliaid"
 	"fmt"
 	"sort"
 )
@@ -10,19 +11,19 @@ import (
 // 3-tuple mentioned in the paper
 // TODO: It is not like the paper <ip, udp port, node id>, but <id, address(ip+port), distance(maybe cached)>
 type Contact struct {
-	ID       *KademliaID
+	ID       *kademliaid.KademliaID
 	Address  string
-	distance *KademliaID
+	distance *kademliaid.KademliaID
 }
 
 // NewContact returns a new instance of a Contact
-func NewContact(id *KademliaID, address string) Contact {
+func NewContact(id *kademliaid.KademliaID, address string) Contact {
 	return Contact{id, address, nil}
 }
 
 // CalcDistance calculates the distance to the target and
 // fills the contacts distance field
-func (contact *Contact) CalcDistance(target *KademliaID) {
+func (contact *Contact) CalcDistance(target *kademliaid.KademliaID) {
 	contact.distance = contact.ID.CalcDistance(target)
 }
 

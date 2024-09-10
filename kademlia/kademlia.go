@@ -1,20 +1,17 @@
 package kademlia
 
-// Hyperparameters
-
-// "k: system-wide replication parameter"
-const BucketSize = 20
+import "d7024e_group04/kademlia/contact"
 
 type Kademlia struct {
 }
 
 // TODO: I do not expect these functions in a "kademlia.go" file
 
-func (kademlia *Kademlia) Ping(target *Contact) {
+func (kademlia *Kademlia) Ping(target *contact.Contact) {
 	// TODO
 }
 
-func (kademlia *Kademlia) LookupContact(target *Contact) {
+func (kademlia *Kademlia) LookupContact(target *contact.Contact) {
 	// TODO
 }
 
