@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+option go_package = "d7024e_group04/proto";
+
+package proto;
+
+service Kademlia {
+    rpc Ping (Node) returns (Node) {}
+}
+
+message Node {
+    bytes ID = 1;
+    string Address = 2;
+}

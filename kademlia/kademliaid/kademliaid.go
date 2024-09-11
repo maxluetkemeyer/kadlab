@@ -5,6 +5,8 @@ import (
 	"math/rand"
 )
 
+// TODO bad package naming, kademliaid.KademliaID
+
 // the static number of bytes in a KademliaID
 // TODO: Why use bytes and not bit? Does go has a bit interface? No it does not
 // 160 / 8 = 20

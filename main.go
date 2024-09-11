@@ -3,15 +3,32 @@
 package main
 
 import (
-	"d7024e/kademlia"
-	"fmt"
+	"context"
+	"d7024e_group04/kademlia"
+	"log"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
-	fmt.Println("Pretending to run the kademlia app...")
-	// Using stuff from the kademlia package here. Something like...
-	id := kademlia.NewKademliaID("FFFFFFFF00000000000000000000000000000000")
-	contact := kademlia.NewContact(id, "localhost:8000")
-	fmt.Println(contact.String())
-	fmt.Printf("%v\n", contact)
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "50051"
+	}
+
+	host, err := os.Hostname()
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	address := host + ":" + port
+	rootCtx, cancelCtx := signal.NotifyContext(context.Background(), syscall.SIGTERM)
+
+	node := kademlia.NewNode(address)
+
+	err = node.Start(rootCtx)
+
+	cancelCtx()
+	log.Printf("node shutdown, reason: %v", err)
 }

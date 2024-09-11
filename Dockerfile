@@ -1,13 +1,20 @@
-FROM alpine:latest
+FROM golang:alpine
 
-# Add the commands needed to put your compiled go binary in the container and
-# run it when the container starts.
-#
-# See https://docs.docker.com/engine/reference/builder/ for a reference of all
-# the commands you can use in this file.
-#
-# In order to use this file together with the docker-compose.yml file in the
-# same directory, you need to ensure the image you build gets the name
-# "kadlab", which you do by using the following command:
-#
-# $ docker build . -t kadlab
+RUN go install github.com/vadimi/grpc-client-cli/cmd/grpc-client-cli@latest 
+
+WORKDIR /kademlia
+
+COPY . /kademlia
+
+COPY /proto /etc/proto
+
+RUN go build -o kademlia-node
+
+# used to debug grpc calls
+RUN echo "/go/bin/grpc-client-cli --proto /etc/proto/kademlia.proto \$@" >> /bin/grpc
+
+RUN chmod +x /bin/*
+
+EXPOSE 50051
+
+ENTRYPOINT [ "/kademlia/kademlia-node" ]
