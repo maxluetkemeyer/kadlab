@@ -11,6 +11,8 @@ import (
 	"syscall"
 )
 
+const BucketSize = "20"
+
 func main() {
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -21,6 +23,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+
+	os.Setenv("BUCKET_SIZE", BucketSize) // TODO move this to config file?
 
 	address := host + ":" + port
 	rootCtx, cancelCtx := signal.NotifyContext(context.Background(), syscall.SIGTERM)

@@ -15,11 +15,13 @@ import (
 // TODO: Need to be public for "routingtable.go", make this private
 type Bucket struct {
 	list *list.List
+	size int
 }
 
 // NewBucket returns a new instance of a Bucket
-func NewBucket() *Bucket {
-	bucket := &Bucket{}
+func NewBucket(size int) *Bucket {
+	// ignore error since we set this env in runtime
+	bucket := &Bucket{size: size}
 	bucket.list = list.New()
 	return bucket
 }

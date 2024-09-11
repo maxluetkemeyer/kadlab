@@ -4,6 +4,8 @@ import (
 	"d7024e_group04/kademlia/bucket"
 	"d7024e_group04/kademlia/contact"
 	"d7024e_group04/kademlia/kademliaid"
+	"os"
+	"strconv"
 )
 
 // RoutingTable definition
@@ -17,9 +19,12 @@ type RoutingTable struct {
 
 // NewRoutingTable returns a new instance of a RoutingTable
 func NewRoutingTable(me contact.Contact) *RoutingTable {
+	// ignore err for now, we set this in runtime
+	size, _ := strconv.Atoi(os.Getenv("BUCKET_SIZE"))
+
 	routingTable := &RoutingTable{}
 	for i := 0; i < kademliaid.IDLength*8; i++ {
-		routingTable.buckets[i] = bucket.NewBucket()
+		routingTable.buckets[i] = bucket.NewBucket(size)
 	}
 	routingTable.me = me
 	return routingTable

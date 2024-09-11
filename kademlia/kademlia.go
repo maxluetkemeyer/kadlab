@@ -4,7 +4,10 @@ import (
 	"context"
 	"d7024e_group04/kademlia/contact"
 	"d7024e_group04/kademlia/kademliaid"
+	"d7024e_group04/kademlia/routingtable"
 	pb "d7024e_group04/proto"
+	"encoding/hex"
+	"fmt"
 	"log"
 	"net"
 
@@ -13,14 +16,18 @@ import (
 
 type Node struct {
 	pb.UnimplementedKademliaServer
-	ID      kademliaid.KademliaID
-	Address string
+	ID           *kademliaid.KademliaID
+	Address      string
+	routingTable *routingtable.RoutingTable
 }
 
 func NewNode(address string) *Node {
+	id := kademliaid.NewRandomKademliaID()
+	c := contact.NewContact(id, address)
 	return &Node{
-		ID:      *kademliaid.NewRandomKademliaID(),
-		Address: address,
+		ID:           id,
+		Address:      address,
+		routingTable: routingtable.NewRoutingTable(c),
 	}
 }
 
@@ -49,8 +56,16 @@ func (n *Node) Start(ctx context.Context) error {
 // TODO: I do not expect these functions in a "n.go" file
 
 func (n *Node) Ping(ctx context.Context, sender *pb.Node) (*pb.Node, error) {
-	// TODO update bucket with sender info
-	log.Printf("received ping\n")
+	log.Printf("received ping from \nnode: %v\naddress: %v\n", hex.EncodeToString(sender.ID), sender.Address)
+
+	if len(sender.ID) != 20 {
+		return nil, fmt.Errorf("invalid id length %v", len(sender.ID))
+	}
+
+	c := contact.NewContact((*kademliaid.KademliaID)(sender.ID), sender.Address)
+
+	n.routingTable.AddContact(c)
+
 	return &pb.Node{
 		ID:      n.ID[:],
 		Address: n.Address,
