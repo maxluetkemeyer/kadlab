@@ -52,7 +52,7 @@ func TestAddContact(t *testing.T) {
 		t.Run(test.Name, func(t *testing.T) {
 
 			for _, myContact := range test.Contacts {
-				test.Bucket.addContactCustom(myContact)
+				test.Bucket.AddContact(myContact)
 			}
 
 			got := test.Bucket.Len()

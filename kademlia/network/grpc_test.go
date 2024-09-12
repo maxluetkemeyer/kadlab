@@ -8,7 +8,6 @@ import (
 	pb "d7024e_group04/proto"
 	"log"
 	"net"
-	"os"
 	"time"
 
 	"google.golang.org/grpc"
@@ -16,7 +15,6 @@ import (
 )
 
 const bufSize = 1024 * 1024
-const BUCKET_SIZE = "20"
 
 var (
 	lis *bufconn.Listener
@@ -27,10 +25,6 @@ var (
 	clientID      = kademliaid.NewRandomKademliaID()
 	clientAddress = "sender_ip"
 )
-
-func init() {
-	os.Setenv("BUCKET_SIZE", BUCKET_SIZE)
-}
 
 func initBufconn() {
 	c := contact.NewContact(targetID, targetAddress)

@@ -1,11 +1,10 @@
 package routingtable
 
 import (
+	"d7024e_group04/env"
 	"d7024e_group04/kademlia/bucket"
 	"d7024e_group04/kademlia/contact"
 	"d7024e_group04/kademlia/kademliaid"
-	"os"
-	"strconv"
 )
 
 // RoutingTable definition
@@ -14,17 +13,16 @@ import (
 // 160 buckets with the current IDLength
 type RoutingTable struct {
 	me      contact.Contact
-	buckets [kademliaid.IDLength * 8]*bucket.Bucket
+	buckets [env.IDLength * 8]*bucket.Bucket
 }
 
 // NewRoutingTable returns a new instance of a RoutingTable
 func NewRoutingTable(me contact.Contact) *RoutingTable {
 	// ignore err for now, we set this in runtime
-	size, _ := strconv.Atoi(os.Getenv("BUCKET_SIZE"))
 
 	routingTable := &RoutingTable{}
-	for i := 0; i < kademliaid.IDLength*8; i++ {
-		routingTable.buckets[i] = bucket.NewBucket(size)
+	for i := 0; i < env.IDLength*8; i++ {
+		routingTable.buckets[i] = bucket.NewBucket(env.BucketSize)
 	}
 	routingTable.me = me
 	return routingTable
@@ -50,7 +48,7 @@ func (routingTable *RoutingTable) FindClosestContacts(target *kademliaid.Kademli
 
 	// TODO: Put condition in extra function
 	// If we do not have enough candidates, we check the two nearest buckets and so on and so on
-	for i := 1; (bucketIndex-i >= 0 || bucketIndex+i < kademliaid.IDLength*8) && candidates.Len() < count; i++ {
+	for i := 1; (bucketIndex-i >= 0 || bucketIndex+i < env.IDLength*8) && candidates.Len() < count; i++ {
 		// TODO: Can we follow DRY principle? dont repeat yourself
 		// Add candidates of the smaller nearest bucket
 		if bucketIndex-i >= 0 {
@@ -58,7 +56,7 @@ func (routingTable *RoutingTable) FindClosestContacts(target *kademliaid.Kademli
 			candidates.Append(bucket.GetContactAndCalcDistance(target))
 		}
 		// Add candidates of the bigger nearest bucket
-		if bucketIndex+i < kademliaid.IDLength*8 {
+		if bucketIndex+i < env.IDLength*8 {
 			bucket = routingTable.buckets[bucketIndex+i]
 			candidates.Append(bucket.GetContactAndCalcDistance(target))
 		}
@@ -82,7 +80,7 @@ func (routingTable *RoutingTable) getBucketIndex(id *kademliaid.KademliaID) int 
 
 	// TODO: Remove abbreviations
 	// TODO: Simplify loop
-	for i := 0; i < kademliaid.IDLength; i++ {
+	for i := 0; i < env.IDLength; i++ {
 		for j := 0; j < 8; j++ {
 			// Loop thorugh each bit of the id
 			// TODO: Maybe stick to byte type?
@@ -93,5 +91,5 @@ func (routingTable *RoutingTable) getBucketIndex(id *kademliaid.KademliaID) int 
 		}
 	}
 
-	return kademliaid.IDLength*8 - 1
+	return env.IDLength*8 - 1
 }

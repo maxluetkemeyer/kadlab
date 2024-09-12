@@ -6,12 +6,9 @@ import (
 
 // AddContact adds the Contact to the front of the bucket
 // or moves it to the front of the bucket if it already existed
-func (bucket *Bucket) AddContact(newContact contact.Contact) {
-	bucket.addContactCustom(newContact)
-}
 
 // TODO: Split up into multiple check functions and test them isolated
-func (bucket *Bucket) addContactCustom(newContact contact.Contact) {
+func (bucket *Bucket) AddContact(newContact contact.Contact) {
 
 	// Is the new contact already stored in the list?
 	// Paper: "If the sending node already exists in the recipient’s k-bucket,
