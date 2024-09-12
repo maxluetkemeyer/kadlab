@@ -6,9 +6,36 @@ package proto;
 
 service Kademlia {
     rpc Ping (Node) returns (Node) {}
+    rpc Find_Node (KademliaID) return (Nodes) {}
+    rpc Find_Value (KademliaID) return (NodesOrData)
+    rpc Store (Content) return (StoreResult)
+}
+
+message StoreResult {
+    bool Success = 1;
+}
+
+message Content {
+    KademliaID Key = 1;
+    string Value = 2;
+}
+
+message KademliaID {
+    bytes Value = 1;
 }
 
 message Node {
-    bytes ID = 1;
-    string Address = 2;
+    KademliaID ID = 1;
+    string IPWithPort = 2;
+}
+
+message Nodes {
+    repeated Node = 1;
+}
+
+message NodesOrData {
+    oneof Value {
+        Nodes Nodes = 1;
+        bytes Data = 2;
+    }
 }
