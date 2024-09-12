@@ -6,9 +6,9 @@ package proto;
 
 service Kademlia {
     rpc Ping (Node) returns (Node) {}
-    rpc Find_Node (KademliaID) return (Nodes) {}
-    rpc Find_Value (KademliaID) return (NodesOrData) {}
-    rpc Store (Content) return (StoreResult) {}
+    rpc Find_Node (KademliaID) returns (Nodes) {}
+    rpc Find_Value (KademliaID) returns (NodesOrData) {}
+    rpc Store (Content) returns (StoreResult) {}
 }
 
 message StoreResult {
@@ -30,7 +30,7 @@ message Node {
 }
 
 message Nodes {
-    repeated Node = 1;
+    repeated Node Node = 1;
 }
 
 message NodesOrData {
