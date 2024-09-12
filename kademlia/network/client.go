@@ -56,8 +56,8 @@ func (c *Client) SendPing(ctx context.Context, contact *contact.Contact) error {
 	grpc := pb.NewKademliaClient(conn)
 
 	payload := &pb.Node{
-		ID:      c.id.Bytes(),
-		Address: c.address,
+		ID:         &pb.KademliaID{Value: c.id.Bytes()},
+		IPWithPort: c.address,
 	}
 
 	resp, err := grpc.Ping(ctx, payload)
@@ -65,7 +65,7 @@ func (c *Client) SendPing(ctx context.Context, contact *contact.Contact) error {
 		return fmt.Errorf("failed to ping node: %v address %v, err: %v", contact.ID, contact.Address, err)
 	}
 
-	if !contact.ID.Equals((*kademliaid.KademliaID)(resp.ID)) {
+	if !contact.ID.Equals((*kademliaid.KademliaID)(resp.ID.Value)) {
 		return fmt.Errorf("invalid response from ping to node: %v, address %v, err: %v", contact.ID, contact.Address, err)
 	}
 

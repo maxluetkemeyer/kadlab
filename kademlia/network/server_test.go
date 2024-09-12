@@ -46,8 +46,8 @@ func TestServer_Ping(t *testing.T) {
 		go timeoutContext(ctx, cancel)
 
 		sender := &pb.Node{
-			ID:      clientID.Bytes(),
-			Address: clientAddress,
+			ID:         &pb.KademliaID{Value: clientID.Bytes()},
+			IPWithPort: clientAddress,
 		}
 
 		resp, err := client.Ping(ctx, sender)
@@ -56,12 +56,12 @@ func TestServer_Ping(t *testing.T) {
 			t.Error(fmt.Errorf("rpc ping failed: %v", err))
 		}
 
-		if !reflect.DeepEqual(resp.ID, targetID.Bytes()) {
-			t.Error(fmt.Errorf("wrong id from responding node, got %v wanted %v", resp.ID, targetID.Bytes()))
+		if !reflect.DeepEqual(resp.ID.Value, targetID.Bytes()) {
+			t.Error(fmt.Errorf("wrong id from responding node, got %v wanted %v", resp.ID.Value, targetID.Bytes()))
 		}
 
-		if resp.Address != targetAddress {
-			t.Error(fmt.Errorf("wrong address from responding node, got %v wanted %v", resp.Address, targetAddress))
+		if resp.IPWithPort != targetAddress {
+			t.Error(fmt.Errorf("wrong address from responding node, got %v wanted %v", resp.IPWithPort, targetAddress))
 		}
 	})
 
@@ -71,8 +71,8 @@ func TestServer_Ping(t *testing.T) {
 		go timeoutContext(ctx, cancel)
 
 		sender := &pb.Node{
-			ID:      clientID.Bytes()[:5],
-			Address: clientAddress,
+			ID:         &pb.KademliaID{Value: clientID.Bytes()[:5]},
+			IPWithPort: clientAddress,
 		}
 
 		if _, err := client.Ping(ctx, sender); err == nil {
