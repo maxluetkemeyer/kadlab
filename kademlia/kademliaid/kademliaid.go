@@ -81,3 +81,12 @@ func (kademliaID KademliaID) CalcDistance(target *KademliaID) *KademliaID {
 func (kademliaID *KademliaID) String() string {
 	return hex.EncodeToString(kademliaID[0:IDLength])
 }
+
+// Bytes returns the kademliaID as a byte array
+func (KademliaID *KademliaID) Bytes() []byte {
+	bytes := make([]byte, 0, IDLength)
+	for _, b := range *KademliaID {
+		bytes = append(bytes, b)
+	}
+	return bytes
+}

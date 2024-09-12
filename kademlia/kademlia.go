@@ -4,82 +4,35 @@ import (
 	"context"
 	"d7024e_group04/kademlia/contact"
 	"d7024e_group04/kademlia/kademliaid"
+	"d7024e_group04/kademlia/network"
 	"d7024e_group04/kademlia/routingtable"
-	pb "d7024e_group04/proto"
-	"encoding/hex"
-	"fmt"
-	"log"
-	"net"
-
-	"google.golang.org/grpc"
 )
 
 type Node struct {
-	pb.UnimplementedKademliaServer
-	ID           *kademliaid.KademliaID
-	Address      string
+	id           *kademliaid.KademliaID
+	address      string
+	store        map[string][]byte
 	routingTable *routingtable.RoutingTable
+	server       *network.Server
 }
 
 func NewNode(address string) *Node {
 	id := kademliaid.NewRandomKademliaID()
 	c := contact.NewContact(id, address)
+
+	routingTable := routingtable.NewRoutingTable(c)
+	server := network.NewServer(address, id, routingTable)
+
 	return &Node{
-		ID:           id,
-		Address:      address,
-		routingTable: routingtable.NewRoutingTable(c),
+		id:           id,
+		address:      address,
+		store:        make(map[string][]byte),
+		routingTable: routingTable,
+		server:       server,
 	}
 }
 
 func (n *Node) Start(ctx context.Context) error {
-	lis, err := net.Listen("tcp", n.Address)
-	if err != nil {
-		return err
-	}
-
-	grpcServer := grpc.NewServer()
-	pb.RegisterKademliaServer(grpcServer, n)
-
-	go func() {
-		<-ctx.Done()
-		grpcServer.GracefulStop()
-		lis.Close()
-	}()
-
-	log.Printf("serving at %v", lis.Addr())
-	if err := grpcServer.Serve(lis); err != nil {
-		return err
-	}
-	return nil
-}
-
-// TODO: I do not expect these functions in a "n.go" file
-
-func (n *Node) Ping(ctx context.Context, sender *pb.Node) (*pb.Node, error) {
-	log.Printf("received ping from \nnode: %v\naddress: %v\n", hex.EncodeToString(sender.ID), sender.Address)
-
-	if len(sender.ID) != 20 {
-		return nil, fmt.Errorf("invalid id length %v", len(sender.ID))
-	}
-
-	c := contact.NewContact((*kademliaid.KademliaID)(sender.ID), sender.Address)
-
-	n.routingTable.AddContact(c)
-
-	return &pb.Node{
-		ID:      n.ID[:],
-		Address: n.Address,
-	}, nil
-}
-
-func (n *Node) LookupContact(target *contact.Contact) {
-	// TODO
-}
-
-func (n *Node) LookupData(hash string) {
-	// TODO
-}
-
-func (n *Node) Store(data []byte) {
-	// TODO
+	// TODO eventually start more stuff here that should be running during runtime
+	return n.server.Start(ctx)
 }
