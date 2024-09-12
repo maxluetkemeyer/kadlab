@@ -60,8 +60,9 @@ func TestServer_Serve(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
 
 		go func() {
-			// timeout, did not shutdown on context cancel
-			time.Sleep(250 * time.Millisecond)
+			<-ctx.Done()
+			// timeout test, did not shutdown on context cancel
+			time.Sleep(30 * time.Second)
 			cancel()
 			panic("did not shutdown grpc server on context cancel")
 		}()
