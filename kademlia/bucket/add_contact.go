@@ -1,18 +1,14 @@
 package bucket
 
 import (
-	"d7024e_group04/kademlia"
 	"d7024e_group04/kademlia/contact"
 )
 
 // AddContact adds the Contact to the front of the bucket
 // or moves it to the front of the bucket if it already existed
-func (bucket *Bucket) AddContact(newContact contact.Contact) {
-	bucket.addContactCustom(newContact, kademlia.BucketSize)
-}
 
 // TODO: Split up into multiple check functions and test them isolated
-func (bucket *Bucket) addContactCustom(newContact contact.Contact, bucketSize int) {
+func (bucket *Bucket) AddContact(newContact contact.Contact) {
 
 	// Is the new contact already stored in the list?
 	// Paper: "If the sending node already exists in the recipient’s k-bucket,
@@ -29,7 +25,7 @@ func (bucket *Bucket) addContactCustom(newContact contact.Contact, bucketSize in
 	// Is there space in the bucket?
 	// Paper: "If the node is not already in the appropriate k-bucket and the bucket has fewer than k entries,
 	// then the recipient just inserts the new sender at the tail of the list.
-	if bucket.list.Len() < bucketSize {
+	if bucket.list.Len() < bucket.size {
 		bucket.list.PushBack(newContact)
 		return
 	}

@@ -8,7 +8,7 @@ import (
 
 func TestBucket(t *testing.T) {
 	t.Run("New Bucket should be empty", func(t *testing.T) {
-		bucket := NewBucket()
+		bucket := NewBucket(20)
 
 		want := 0
 		got := bucket.list.Len()
@@ -19,7 +19,7 @@ func TestBucket(t *testing.T) {
 	})
 
 	t.Run("Bucket length", func(t *testing.T) {
-		bucket := NewBucket()
+		bucket := NewBucket(20)
 
 		contact0 := contact.NewContact(kademliaid.NewKademliaID("1111111100000000000000000000000000000000"), "")
 		contact1 := contact.NewContact(kademliaid.NewKademliaID("1111111200000000000000000000000000000000"), "")

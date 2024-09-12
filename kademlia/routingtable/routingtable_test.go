@@ -4,6 +4,7 @@ import (
 	"d7024e_group04/kademlia/contact"
 	"d7024e_group04/kademlia/kademliaid"
 	"fmt"
+	"os"
 	"testing"
 )
 
@@ -11,6 +12,8 @@ import (
 // that is included as an example.
 
 func TestRoutingTable(t *testing.T) {
+	os.Setenv("BUCKET_SIZE", "20")
+
 	rt := NewRoutingTable(contact.NewContact(kademliaid.NewKademliaID("FFFFFFFF00000000000000000000000000000000"), "localhost:8000"))
 
 	rt.AddContact(contact.NewContact(kademliaid.NewKademliaID("FFFFFFFF00000000000000000000000000000000"), "localhost:8001"))
