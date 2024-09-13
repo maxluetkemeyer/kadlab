@@ -73,11 +73,11 @@ func (s *Server) Ping(ctx context.Context, sender *pb.Node) (*pb.Node, error) {
 	}, nil
 }
 
-func (s *Server) Find_Value(ctx context.Context, kademliaID *pb.KademliaID) (*pb.NodesOrData, error) {
+func (s *Server) FindValue(ctx context.Context, kademliaID *pb.KademliaID) (*pb.NodesOrData, error) {
 	panic("TODO")
 }
 
-func (s *Server) Find_Node(ctx context.Context, kademliaID *pb.KademliaID) (*pb.Nodes, error) {
+func (s *Server) FindNode(ctx context.Context, kademliaID *pb.KademliaID) (*pb.Nodes, error) {
 	panic("TODO")
 }
 

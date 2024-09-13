@@ -74,14 +74,14 @@ func (c *Client) SendPing(ctx context.Context, contact *contact.Contact) error {
 	return nil
 }
 
-func (c *Client) SendFindContactMessage(ctx context.Context, contact *contact.Contact) {
+func (c *Client) SendFindNode(ctx context.Context, contact *contact.Contact) {
 	// TODO
 }
 
-func (c *Client) SendFindDataMessage(ctx context.Context, hash string) {
+func (c *Client) SendFindValue(ctx context.Context, hash string) {
 	// TODO
 }
 
-func (c *Client) SendStoreMessage(ctx context.Context, data []byte) {
+func (c *Client) SendStore(ctx context.Context, data []byte) {
 	// TODO
 }
