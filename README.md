@@ -1,4 +1,4 @@
-# Sprint 0
+# Sprint 1
 
 ```bash
 docker build . -t kadlab
