@@ -6,7 +6,7 @@ import (
 	"log"
 )
 
-// TODO: Error handling in string, getvalue, ...
+// TODO: Input Validation, Tests, Error handling in string, getvalue, ...
 func (s *Server) FindValue(ctx context.Context, kademliaID *pb.KademliaID) (*pb.NodesOrData, error) {
 	key := string(kademliaID.Value)
 

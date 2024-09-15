@@ -6,6 +6,7 @@ import (
 	"log"
 )
 
+// TODO: Input validation, Tests
 func (s *Server) Store(ctx context.Context, content *pb.Content) (*pb.StoreResult, error) {
 	log.Print("received store rpc")
 
