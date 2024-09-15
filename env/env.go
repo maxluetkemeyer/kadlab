@@ -6,17 +6,32 @@ import (
 )
 
 var Port = 50051
-
-const IDLength = 20
-const BucketSize = 20
+var IDLength = 20
+var BucketSize = 20
 
 func init() {
 	port := os.Getenv("PORT")
+	idLength := os.Getenv("ID_LENGTH")
+	bucketSize := os.Getenv("BUCKET_SIZE")
 
 	if port != "" {
-		p, err := strconv.Atoi(port)
+		portInt, err := strconv.Atoi(port)
 		if err == nil {
-			Port = p
+			Port = portInt
+		}
+	}
+
+	if idLength != "" {
+		idLengthInt, err := strconv.Atoi(idLength)
+		if err == nil {
+			IDLength = idLengthInt
+		}
+	}
+
+	if bucketSize != "" {
+		bucketSizeInt, err := strconv.Atoi(bucketSize)
+		if err == nil {
+			BucketSize = bucketSizeInt
 		}
 	}
 
