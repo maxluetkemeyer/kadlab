@@ -6,6 +6,10 @@ import (
 	"context"
 	"d7024e_group04/env"
 	"d7024e_group04/kademlia"
+	"d7024e_group04/kademlia/contact"
+	"d7024e_group04/kademlia/kademliaid"
+	"d7024e_group04/kademlia/network"
+	"d7024e_group04/kademlia/routingtable"
 	"log"
 	"os"
 	"os/signal"
@@ -23,7 +27,15 @@ func main() {
 	address := host + ":" + strconv.Itoa(env.Port)
 	rootCtx, cancelCtx := signal.NotifyContext(context.Background(), syscall.SIGTERM)
 
-	node := kademlia.NewNode(address)
+	id := kademliaid.NewRandomKademliaID()
+	c := contact.NewContact(id, address)
+
+	routingTable := routingtable.NewRoutingTable(c)
+	server := network.NewServer(address, id, routingTable)
+
+	client := network.NewClient(address, id, routingTable)
+
+	node := kademlia.NewNode(address, client, server)
 
 	err = node.Start(rootCtx)
 

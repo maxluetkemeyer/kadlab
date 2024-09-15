@@ -2,6 +2,7 @@ package network
 
 import (
 	"context"
+	"d7024e_group04/env"
 	"d7024e_group04/kademlia/contact"
 	"d7024e_group04/kademlia/kademliaid"
 	"d7024e_group04/kademlia/routingtable"
@@ -56,30 +57,30 @@ func (s *Server) Start(ctx context.Context) error {
 
 // Ping serves PING rpc calls, saves the senders contact info and replies with it's own contact info
 func (s *Server) Ping(ctx context.Context, sender *pb.Node) (*pb.Node, error) {
-	log.Printf("received ping from\nNode: %v\nAddress: %v\n", hex.EncodeToString(sender.ID), sender.Address)
+	log.Printf("received ping from\nNode: %v\nAddress: %v\n", hex.EncodeToString(sender.ID.Value), sender.IPWithPort)
 
-	if len(sender.ID) != 20 {
-		return nil, fmt.Errorf("invalid id length %v", len(sender.ID))
+	if len(sender.ID.Value) != env.IDLength {
+		return nil, fmt.Errorf("invalid id length %v", len(sender.ID.Value))
 	}
 
-	c := contact.NewContact((*kademliaid.KademliaID)(sender.ID), sender.Address)
+	c := contact.NewContact((*kademliaid.KademliaID)(sender.ID.Value), sender.IPWithPort)
 
 	s.routingTable.AddContact(c)
 
 	return &pb.Node{
-		ID:      s.id[:],
-		Address: s.address,
+		ID:         &pb.KademliaID{Value: s.id.Bytes()},
+		IPWithPort: s.address,
 	}, nil
 }
 
-func (s *Server) LookupContact(target *contact.Contact) {
-	// TODO
+func (s *Server) FindValue(ctx context.Context, kademliaID *pb.KademliaID) (*pb.NodesOrData, error) {
+	panic("TODO")
 }
 
-func (s *Server) LookupData(hash string) {
-	// TODO
+func (s *Server) FindNode(ctx context.Context, kademliaID *pb.KademliaID) (*pb.Nodes, error) {
+	panic("TODO")
 }
 
-func (s *Server) Store(data []byte) {
-	// TODO
+func (s *Server) Store(ctx context.Context, content *pb.Content) (*pb.StoreResult, error) {
+	panic("TODO")
 }
