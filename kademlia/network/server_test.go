@@ -1,8 +1,9 @@
-package server
+package network
 
 import (
 	"context"
-	"d7024e_group04/kademlia/network"
+	server2 "d7024e_group04/kademlia/network/server"
+	"d7024e_group04/kademlia/network/store"
 	"fmt"
 	"reflect"
 	"testing"
@@ -17,12 +18,12 @@ import (
 )
 
 func TestServer_Serve(t *testing.T) {
-	routingTable := routingtable.NewRoutingTable(contact.NewContact(network.targetID, network.targetAddress))
-	server := NewServer(network.targetAddress, network.targetID, routingTable)
+	routingTable := routingtable.NewRoutingTable(contact.NewContact(targetID, targetAddress))
+	server := server2.NewServer(targetAddress, targetID, routingTable, store.NewMemoryStore())
 
 	t.Run("start and stop", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
-		go network.timeoutContext(ctx, cancel)
+		go timeoutContext(ctx, cancel)
 
 		err := server.Start(ctx)
 		if err != nil {
@@ -32,9 +33,9 @@ func TestServer_Serve(t *testing.T) {
 }
 
 func TestServer_Ping(t *testing.T) {
-	network.initBufconn()
+	initBufconn()
 
-	conn, err := grpc.NewClient("passthrough://bufnet", grpc.WithContextDialer(network.bufDialer), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient("passthrough://bufnet", grpc.WithContextDialer(bufDialer), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		t.Fatalf("Failed to dial bufnet: %v", err)
 	}
@@ -44,11 +45,11 @@ func TestServer_Ping(t *testing.T) {
 
 	t.Run("ping valid node", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-		go network.timeoutContext(ctx, cancel)
+		go timeoutContext(ctx, cancel)
 
 		sender := &pb.Node{
-			ID:         &pb.KademliaID{Value: network.clientID.Bytes()},
-			IPWithPort: network.clientAddress,
+			ID:         &pb.KademliaID{Value: clientID.Bytes()},
+			IPWithPort: clientAddress,
 		}
 
 		resp, err := client.Ping(ctx, sender)
@@ -57,23 +58,23 @@ func TestServer_Ping(t *testing.T) {
 			t.Error(fmt.Errorf("rpc ping failed: %v", err))
 		}
 
-		if !reflect.DeepEqual(resp.ID.Value, network.targetID.Bytes()) {
-			t.Error(fmt.Errorf("wrong id from responding node, got %v wanted %v", resp.ID.Value, network.targetID.Bytes()))
+		if !reflect.DeepEqual(resp.ID.Value, targetID.Bytes()) {
+			t.Error(fmt.Errorf("wrong id from responding node, got %v wanted %v", resp.ID.Value, targetID.Bytes()))
 		}
 
-		if resp.IPWithPort != network.targetAddress {
-			t.Error(fmt.Errorf("wrong address from responding node, got %v wanted %v", resp.IPWithPort, network.targetAddress))
+		if resp.IPWithPort != targetAddress {
+			t.Error(fmt.Errorf("wrong address from responding node, got %v wanted %v", resp.IPWithPort, targetAddress))
 		}
 	})
 
 	t.Run("ping with invalid node id", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 
-		go network.timeoutContext(ctx, cancel)
+		go timeoutContext(ctx, cancel)
 
 		sender := &pb.Node{
-			ID:         &pb.KademliaID{Value: network.clientID.Bytes()[:5]},
-			IPWithPort: network.clientAddress,
+			ID:         &pb.KademliaID{Value: clientID.Bytes()[:5]},
+			IPWithPort: clientAddress,
 		}
 
 		if _, err := client.Ping(ctx, sender); err == nil {

@@ -4,6 +4,8 @@ import (
 	"context"
 	"d7024e_group04/kademlia/contact"
 	"d7024e_group04/kademlia/kademliaid"
+	server2 "d7024e_group04/kademlia/network/server"
+	"d7024e_group04/kademlia/network/store"
 	"d7024e_group04/kademlia/routingtable"
 	pb "d7024e_group04/proto"
 	"log"
@@ -30,7 +32,7 @@ func initBufconn() {
 	c := contact.NewContact(targetID, targetAddress)
 	routingTable := routingtable.NewRoutingTable(c)
 
-	server := NewServer(targetAddress, targetID, routingTable)
+	server := server2.NewServer(targetAddress, targetID, routingTable, store.NewMemoryStore())
 	lis = bufconn.Listen(bufSize)
 	grpcServer := grpc.NewServer()
 	pb.RegisterKademliaServer(grpcServer, server)
