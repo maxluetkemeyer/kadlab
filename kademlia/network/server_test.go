@@ -2,6 +2,8 @@ package network
 
 import (
 	"context"
+	server2 "d7024e_group04/kademlia/network/server"
+	"d7024e_group04/kademlia/network/store"
 	"fmt"
 	"reflect"
 	"testing"
@@ -17,7 +19,7 @@ import (
 
 func TestServer_Serve(t *testing.T) {
 	routingTable := routingtable.NewRoutingTable(contact.NewContact(targetID, targetAddress))
-	server := NewServer(targetAddress, targetID, routingTable)
+	server := server2.NewServer(targetAddress, targetID, routingTable, store.NewMemoryStore())
 
 	t.Run("start and stop", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)

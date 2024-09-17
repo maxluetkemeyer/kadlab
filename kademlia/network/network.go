@@ -20,3 +20,7 @@ type ServerRPC interface {
 	FindNode(ctx context.Context, kademliaID *pb.KademliaID) (*pb.Nodes, error)
 	Store(ctx context.Context, context *pb.Content) (*pb.StoreResult, error)
 }
+
+type Network interface {
+	ResolveDNS(ctx context.Context, domain string) []string
+}

@@ -9,6 +9,8 @@ import (
 	"d7024e_group04/kademlia/contact"
 	"d7024e_group04/kademlia/kademliaid"
 	"d7024e_group04/kademlia/network"
+	"d7024e_group04/kademlia/network/server"
+	"d7024e_group04/kademlia/network/store"
 	"d7024e_group04/kademlia/routingtable"
 	"log"
 	"os"
@@ -31,11 +33,14 @@ func main() {
 	c := contact.NewContact(id, address)
 
 	routingTable := routingtable.NewRoutingTable(c)
-	server := network.NewServer(address, id, routingTable)
+
+	memoryStore := store.NewMemoryStore()
+
+	server := server.NewServer(address, id, routingTable, memoryStore)
 
 	client := network.NewClient(address, id, routingTable)
 
-	node := kademlia.NewNode(address, client, server)
+	node := kademlia.NewNode(client, server)
 
 	err = node.Start(rootCtx)
 

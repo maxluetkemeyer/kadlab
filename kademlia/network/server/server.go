@@ -1,18 +1,18 @@
-package network
+package server
 
 import (
 	"context"
 	"d7024e_group04/env"
 	"d7024e_group04/kademlia/contact"
 	"d7024e_group04/kademlia/kademliaid"
+	"d7024e_group04/kademlia/network/store"
 	"d7024e_group04/kademlia/routingtable"
 	pb "d7024e_group04/proto"
 	"encoding/hex"
 	"fmt"
+	"google.golang.org/grpc"
 	"log"
 	"net"
-
-	"google.golang.org/grpc"
 )
 
 // Server represents the node grpc server
@@ -21,14 +21,16 @@ type Server struct {
 	id           *kademliaid.KademliaID
 	address      string
 	routingTable *routingtable.RoutingTable
+	store        store.Store
 }
 
 // NewServer returns a new instance of Server
-func NewServer(address string, id *kademliaid.KademliaID, routingTable *routingtable.RoutingTable) *Server {
+func NewServer(address string, id *kademliaid.KademliaID, routingTable *routingtable.RoutingTable, store store.Store) *Server {
 	return &Server{
 		id:           id,
 		address:      address,
 		routingTable: routingTable,
+		store:        store,
 	}
 }
 
@@ -73,14 +75,6 @@ func (s *Server) Ping(ctx context.Context, sender *pb.Node) (*pb.Node, error) {
 	}, nil
 }
 
-func (s *Server) FindValue(ctx context.Context, kademliaID *pb.KademliaID) (*pb.NodesOrData, error) {
-	panic("TODO")
-}
-
 func (s *Server) FindNode(ctx context.Context, kademliaID *pb.KademliaID) (*pb.Nodes, error) {
-	panic("TODO")
-}
-
-func (s *Server) Store(ctx context.Context, content *pb.Content) (*pb.StoreResult, error) {
 	panic("TODO")
 }

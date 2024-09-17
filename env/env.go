@@ -5,18 +5,26 @@ import (
 	"strconv"
 )
 
-var Port = 50051
-
 const IDLength = 20
-const BucketSize = 20
+
+var Port = 50051
+var BucketSize = 20
 
 func init() {
 	port := os.Getenv("PORT")
+	bucketSize := os.Getenv("BUCKET_SIZE")
 
 	if port != "" {
-		p, err := strconv.Atoi(port)
+		portInt, err := strconv.Atoi(port)
 		if err == nil {
-			Port = p
+			Port = portInt
+		}
+	}
+
+	if bucketSize != "" {
+		bucketSizeInt, err := strconv.Atoi(bucketSize)
+		if err == nil {
+			BucketSize = bucketSizeInt
 		}
 	}
 
