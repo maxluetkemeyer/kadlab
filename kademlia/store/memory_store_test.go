@@ -8,7 +8,7 @@ func TestMemoryStore(t *testing.T) {
 
 		key := "myKey"
 		value := "myValue"
-		memStore.SetValue(key, []byte(value))
+		memStore.SetValue(key, value)
 
 		want := value
 		got, err := memStore.GetValue(key)
@@ -28,7 +28,7 @@ func TestMemoryStore(t *testing.T) {
 
 		key := "myKey"
 		value := "myValue"
-		memStore.SetValue(key, []byte(value))
+		memStore.SetValue(key, value)
 
 		_, err := memStore.GetValue("anotherKey")
 

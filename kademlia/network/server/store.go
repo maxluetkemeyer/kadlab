@@ -13,8 +13,7 @@ func (s *Server) Store(ctx context.Context, content *pb.Content) (*pb.StoreResul
 	key := content.Key
 	value := content.Value
 
-	//TODO: Is string in proto better or bytes?
-	s.store.SetValue(key.String(), []byte(value))
+	s.store.SetValue(key.String(), value)
 
 	return &pb.StoreResult{
 		Success: true,

@@ -82,6 +82,6 @@ func (c *Client) SendFindValue(ctx context.Context, hash string) {
 	// TODO
 }
 
-func (c *Client) SendStore(ctx context.Context, data []byte) {
+func (c *Client) SendStore(ctx context.Context, data string) {
 	// TODO
 }

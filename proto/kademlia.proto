@@ -36,6 +36,6 @@ message Nodes {
 message NodesOrData {
     oneof Value {
         Nodes Nodes = 1;
-        bytes Data = 2;
+        string Data = 2;
     }
 }
