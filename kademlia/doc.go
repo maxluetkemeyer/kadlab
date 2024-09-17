@@ -1,3 +1,0 @@
-// TODO: Add package documentation for `kademlia`, like this:
-// Package kademlia something something...
-package kademlia

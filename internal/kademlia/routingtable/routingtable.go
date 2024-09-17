@@ -2,9 +2,9 @@ package routingtable
 
 import (
 	"d7024e_group04/env"
-	"d7024e_group04/kademlia/bucket"
-	"d7024e_group04/kademlia/contact"
-	"d7024e_group04/kademlia/kademliaid"
+	"d7024e_group04/internal/kademlia/bucket"
+	"d7024e_group04/internal/kademlia/contact"
+	"d7024e_group04/internal/kademlia/kademliaid"
 )
 
 // RoutingTable definition
@@ -92,4 +92,8 @@ func (routingTable *RoutingTable) getBucketIndex(id *kademliaid.KademliaID) int 
 	}
 
 	return env.IDLength*8 - 1
+}
+
+func (routingTable *RoutingTable) Me() contact.Contact {
+	return routingTable.me
 }

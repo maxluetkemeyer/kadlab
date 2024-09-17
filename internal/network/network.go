@@ -2,15 +2,15 @@ package network
 
 import (
 	"context"
-	"d7024e_group04/kademlia/contact"
+	"d7024e_group04/internal/kademlia/contact"
 	pb "d7024e_group04/proto"
 )
 
 type ClientRPC interface {
-	SendPing(ctx context.Context, contact *contact.Contact) error
-	SendFindNode(ctx context.Context, contact *contact.Contact)
-	SendFindValue(ctx context.Context, hash string)
-	SendStore(ctx context.Context, data string)
+	SendPing(ctx context.Context, me, target *contact.Contact) (contact.Contact, error)
+	SendFindNode(ctx context.Context, contact *contact.Contact) ([]contact.Contact, error)
+	SendFindValue(ctx context.Context, hash string) (string, error)
+	SendStore(ctx context.Context, data string) error
 }
 
 type ServerRPC interface {

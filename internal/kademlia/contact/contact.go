@@ -1,7 +1,7 @@
 package contact
 
 import (
-	"d7024e_group04/kademlia/kademliaid"
+	"d7024e_group04/internal/kademlia/kademliaid"
 	"fmt"
 	"sort"
 )

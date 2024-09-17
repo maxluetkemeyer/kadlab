@@ -1,7 +1,7 @@
 package bucket
 
 import (
-	"d7024e_group04/kademlia/contact"
+	"d7024e_group04/internal/kademlia/contact"
 )
 
 // AddContact adds the Contact to the front of the bucket

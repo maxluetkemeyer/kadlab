@@ -1,12 +1,11 @@
-package mock
+package server
 
 import (
 	"context"
-	"d7024e_group04/kademlia/contact"
-	"d7024e_group04/kademlia/kademliaid"
-	server2 "d7024e_group04/kademlia/network/server"
-	"d7024e_group04/kademlia/routingtable"
-	"d7024e_group04/kademlia/store"
+	"d7024e_group04/internal/kademlia/contact"
+	"d7024e_group04/internal/kademlia/kademliaid"
+	"d7024e_group04/internal/kademlia/routingtable"
+	"d7024e_group04/internal/store"
 	pb "d7024e_group04/proto"
 	"log"
 	"net"
@@ -32,7 +31,7 @@ func InitBufconn() {
 	c := contact.NewContact(TargetID, TargetAddress)
 	routingTable := routingtable.NewRoutingTable(c)
 
-	server := server2.NewServer(TargetAddress, TargetID, routingTable, store.NewMemoryStore())
+	server := NewServer(routingTable, store.NewMemoryStore())
 	Lis = bufconn.Listen(bufSize)
 	grpcServer := grpc.NewServer()
 	pb.RegisterKademliaServer(grpcServer, server)
@@ -52,5 +51,5 @@ func TimeoutContext(ctx context.Context, cancel context.CancelFunc) {
 	// timeout test, did not shutdown on context cancel
 	time.Sleep(30 * time.Second)
 	cancel()
-	panic("context timedout but test did not finish")
+	panic("context timed out but test did not finish")
 }

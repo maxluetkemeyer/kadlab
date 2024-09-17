@@ -31,7 +31,7 @@ func NewKademliaID(data string) *KademliaID {
 		newKademliaID[i] = decoded[i]
 	}
 
-	// the address of the new kademlia id
+	// the address of the new internal id
 	return &newKademliaID
 }
 

@@ -3,10 +3,10 @@ package server
 import (
 	"context"
 	"d7024e_group04/env"
-	"d7024e_group04/kademlia/contact"
-	"d7024e_group04/kademlia/kademliaid"
-	"d7024e_group04/kademlia/routingtable"
-	"d7024e_group04/kademlia/store"
+	"d7024e_group04/internal/kademlia/contact"
+	"d7024e_group04/internal/kademlia/kademliaid"
+	"d7024e_group04/internal/kademlia/routingtable"
+	"d7024e_group04/internal/store"
 	pb "d7024e_group04/proto"
 	"encoding/hex"
 	"fmt"
@@ -26,10 +26,10 @@ type Server struct {
 }
 
 // NewServer returns a new instance of Server
-func NewServer(address string, id *kademliaid.KademliaID, routingTable *routingtable.RoutingTable, store store.Store) *Server {
+func NewServer(routingTable *routingtable.RoutingTable, store store.Store) *Server {
 	return &Server{
-		id:           id,
-		address:      address,
+		id:           routingTable.Me().ID,
+		address:      routingTable.Me().Address,
 		routingTable: routingTable,
 		store:        store,
 	}

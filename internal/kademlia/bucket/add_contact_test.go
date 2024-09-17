@@ -1,8 +1,8 @@
 package bucket
 
 import (
-	"d7024e_group04/kademlia/contact"
-	"d7024e_group04/kademlia/kademliaid"
+	"d7024e_group04/internal/kademlia/contact"
+	"d7024e_group04/internal/kademlia/kademliaid"
 	"testing"
 )
 
