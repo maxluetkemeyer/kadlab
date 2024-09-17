@@ -1,12 +1,12 @@
-package network
+package mock
 
 import (
 	"context"
 	"d7024e_group04/kademlia/contact"
 	"d7024e_group04/kademlia/kademliaid"
 	server2 "d7024e_group04/kademlia/network/server"
-	"d7024e_group04/kademlia/network/store"
 	"d7024e_group04/kademlia/routingtable"
+	"d7024e_group04/kademlia/store"
 	pb "d7024e_group04/proto"
 	"log"
 	"net"
@@ -19,35 +19,35 @@ import (
 const bufSize = 1024 * 1024
 
 var (
-	lis *bufconn.Listener
+	Lis *bufconn.Listener
 
-	targetID      = kademliaid.NewRandomKademliaID()
-	targetAddress = ":50051"
+	TargetID      = kademliaid.NewRandomKademliaID()
+	TargetAddress = ":50051"
 
-	clientID      = kademliaid.NewRandomKademliaID()
-	clientAddress = "sender_ip"
+	ClientID      = kademliaid.NewRandomKademliaID()
+	ClientAddress = "sender_ip"
 )
 
-func initBufconn() {
-	c := contact.NewContact(targetID, targetAddress)
+func InitBufconn() {
+	c := contact.NewContact(TargetID, TargetAddress)
 	routingTable := routingtable.NewRoutingTable(c)
 
-	server := server2.NewServer(targetAddress, targetID, routingTable, store.NewMemoryStore())
-	lis = bufconn.Listen(bufSize)
+	server := server2.NewServer(TargetAddress, TargetID, routingTable, store.NewMemoryStore())
+	Lis = bufconn.Listen(bufSize)
 	grpcServer := grpc.NewServer()
 	pb.RegisterKademliaServer(grpcServer, server)
 	go func() {
-		if err := grpcServer.Serve(lis); err != nil {
+		if err := grpcServer.Serve(Lis); err != nil {
 			log.Fatalf("Server exited with error: %v", err)
 		}
 	}()
 }
 
-func bufDialer(context.Context, string) (net.Conn, error) {
-	return lis.Dial()
+func BufDialer(context.Context, string) (net.Conn, error) {
+	return Lis.Dial()
 }
 
-func timeoutContext(ctx context.Context, cancel context.CancelFunc) {
+func TimeoutContext(ctx context.Context, cancel context.CancelFunc) {
 	<-ctx.Done()
 	// timeout test, did not shutdown on context cancel
 	time.Sleep(30 * time.Second)

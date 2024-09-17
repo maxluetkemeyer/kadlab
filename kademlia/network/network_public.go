@@ -2,19 +2,19 @@ package network
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"net"
 )
 
 type PublicNetwork struct{}
 
-func (network *PublicNetwork) ResolveDNS(ctx context.Context, domain string) []string {
+func (network *PublicNetwork) ResolveDNS(ctx context.Context, domain string) ([]string, error) {
 	// Perform a DNS lookup for the given domain
 	ipAddresses, err := net.LookupIP(domain)
 
 	if err != nil {
-		log.Fatalf("Failed to resolve domain '%s': %s", domain, err)
-		return []string{}
+		err = fmt.Errorf("failed to resolve domain '%s': %s", domain, err)
+		return nil, err
 	}
 
 	// Convert net.IP addresses to strings and return them
@@ -24,5 +24,5 @@ func (network *PublicNetwork) ResolveDNS(ctx context.Context, domain string) []s
 		ips = append(ips, ipAddress.String())
 	}
 
-	return ips
+	return ips, nil
 }

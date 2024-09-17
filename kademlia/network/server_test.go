@@ -2,8 +2,9 @@ package network
 
 import (
 	"context"
-	server2 "d7024e_group04/kademlia/network/server"
-	"d7024e_group04/kademlia/network/store"
+	"d7024e_group04/kademlia/mock"
+	"d7024e_group04/kademlia/network/server"
+	"d7024e_group04/kademlia/store"
 	"fmt"
 	"reflect"
 	"testing"
@@ -18,12 +19,12 @@ import (
 )
 
 func TestServer_Serve(t *testing.T) {
-	routingTable := routingtable.NewRoutingTable(contact.NewContact(targetID, targetAddress))
-	server := server2.NewServer(targetAddress, targetID, routingTable, store.NewMemoryStore())
+	routingTable := routingtable.NewRoutingTable(contact.NewContact(mock.TargetID, mock.TargetAddress))
+	server := server.NewServer(mock.TargetAddress, mock.TargetID, routingTable, store.NewMemoryStore())
 
 	t.Run("start and stop", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
-		go timeoutContext(ctx, cancel)
+		go mock.TimeoutContext(ctx, cancel)
 
 		err := server.Start(ctx)
 		if err != nil {
@@ -33,9 +34,9 @@ func TestServer_Serve(t *testing.T) {
 }
 
 func TestServer_Ping(t *testing.T) {
-	initBufconn()
+	mock.InitBufconn()
 
-	conn, err := grpc.NewClient("passthrough://bufnet", grpc.WithContextDialer(bufDialer), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient("passthrough://bufnet", grpc.WithContextDialer(mock.BufDialer), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		t.Fatalf("Failed to dial bufnet: %v", err)
 	}
@@ -45,11 +46,11 @@ func TestServer_Ping(t *testing.T) {
 
 	t.Run("ping valid node", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-		go timeoutContext(ctx, cancel)
+		go mock.TimeoutContext(ctx, cancel)
 
 		sender := &pb.Node{
-			ID:         &pb.KademliaID{Value: clientID.Bytes()},
-			IPWithPort: clientAddress,
+			ID:         &pb.KademliaID{Value: mock.ClientID.Bytes()},
+			IPWithPort: mock.ClientAddress,
 		}
 
 		resp, err := client.Ping(ctx, sender)
@@ -58,23 +59,23 @@ func TestServer_Ping(t *testing.T) {
 			t.Error(fmt.Errorf("rpc ping failed: %v", err))
 		}
 
-		if !reflect.DeepEqual(resp.ID.Value, targetID.Bytes()) {
-			t.Error(fmt.Errorf("wrong id from responding node, got %v wanted %v", resp.ID.Value, targetID.Bytes()))
+		if !reflect.DeepEqual(resp.ID.Value, mock.TargetID.Bytes()) {
+			t.Error(fmt.Errorf("wrong id from responding node, got %v wanted %v", resp.ID.Value, mock.TargetID.Bytes()))
 		}
 
-		if resp.IPWithPort != targetAddress {
-			t.Error(fmt.Errorf("wrong address from responding node, got %v wanted %v", resp.IPWithPort, targetAddress))
+		if resp.IPWithPort != mock.TargetAddress {
+			t.Error(fmt.Errorf("wrong address from responding node, got %v wanted %v", resp.IPWithPort, mock.TargetAddress))
 		}
 	})
 
 	t.Run("ping with invalid node id", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 
-		go timeoutContext(ctx, cancel)
+		go mock.TimeoutContext(ctx, cancel)
 
 		sender := &pb.Node{
-			ID:         &pb.KademliaID{Value: clientID.Bytes()[:5]},
-			IPWithPort: clientAddress,
+			ID:         &pb.KademliaID{Value: mock.ClientID.Bytes()[:5]},
+			IPWithPort: mock.ClientAddress,
 		}
 
 		if _, err := client.Ping(ctx, sender); err == nil {
