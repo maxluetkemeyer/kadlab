@@ -14,16 +14,16 @@ import (
 	"d7024e_group04/internal/node"
 	"d7024e_group04/internal/server"
 	"d7024e_group04/internal/store"
-	"golang.org/x/sync/errgroup"
 	"log"
 	"os"
 	"os/signal"
 	"strconv"
 	"syscall"
+
+	"golang.org/x/sync/errgroup"
 )
 
 func main() {
-
 	host, err := os.Hostname()
 	if err != nil {
 		log.Fatal(err.Error())
@@ -44,7 +44,14 @@ func main() {
 
 	node := node.New(client, routingTable, memoryStore)
 
-	// TODO node bootstrap stuff
+	errGroup.Go(func() error {
+		// TODO node bootstrap stuff
+		return err
+	})
+
+	if err = errGroup.Wait(); err != nil {
+		log.Fatalf("bootstrap failed, %v", err)
+	}
 
 	server := server.NewServer(routingTable, memoryStore)
 	errGroup.Go(func() error {

@@ -32,9 +32,11 @@ func InputLoop(cancelCtx context.CancelFunc, stdin io.Reader, node *node.Node) e
 				panic("TODO")
 			case "exit":
 				cancelCtx()
-				return nil
+				return context.Canceled
 			case "forget":
 				panic("TODO")
+			default:
+				fmt.Println("invalid command")
 			}
 		}
 

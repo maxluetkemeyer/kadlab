@@ -7,13 +7,12 @@ import (
 )
 
 type MemoryStore struct {
-	mut   *sync.RWMutex
+	mut   sync.RWMutex
 	myMap map[string]string
 }
 
 func NewMemoryStore() *MemoryStore {
 	return &MemoryStore{
-		mut:   new(sync.RWMutex),
 		myMap: make(map[string]string),
 	}
 }

@@ -7,7 +7,7 @@ import (
 
 const IDLength = 20
 
-var ApiPort = 80
+var ApiPort = 8080
 var Port = 50051
 var BucketSize = 20
 
