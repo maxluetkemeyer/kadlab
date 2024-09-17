@@ -5,6 +5,7 @@ import (
 	"d7024e_group04/internal/kademlia/bucket"
 	"d7024e_group04/internal/kademlia/contact"
 	"d7024e_group04/internal/kademlia/kademliaid"
+	"sync"
 )
 
 // RoutingTable definition
@@ -12,6 +13,7 @@ import (
 // TODO: Do we want to store our address here?
 // 160 buckets with the current IDLength
 type RoutingTable struct {
+	mut     sync.RWMutex
 	me      contact.Contact
 	buckets [env.IDLength * 8]*bucket.Bucket
 }
@@ -30,6 +32,9 @@ func NewRoutingTable(me contact.Contact) *RoutingTable {
 
 // AddContact add a new contact to the correct Bucket
 func (routingTable *RoutingTable) AddContact(contact contact.Contact) {
+	routingTable.mut.Lock()
+	defer routingTable.mut.Unlock()
+
 	bucketIndex := routingTable.getBucketIndex(contact.ID)
 	bucket := routingTable.buckets[bucketIndex]
 	bucket.AddContact(contact)
@@ -40,6 +45,7 @@ func (routingTable *RoutingTable) FindClosestContacts(target *kademliaid.Kademli
 	// TODO: It is a slice of contacts
 	var candidates contact.ContactCandidates
 	// Find in which bucket the target should be
+	routingTable.mut.RLock()
 	bucketIndex := routingTable.getBucketIndex(target)
 	bucket := routingTable.buckets[bucketIndex]
 
@@ -61,6 +67,8 @@ func (routingTable *RoutingTable) FindClosestContacts(target *kademliaid.Kademli
 			candidates.Append(bucket.GetContactAndCalcDistance(target))
 		}
 	}
+
+	routingTable.mut.RUnlock()
 
 	candidates.Sort()
 
@@ -95,5 +103,7 @@ func (routingTable *RoutingTable) getBucketIndex(id *kademliaid.KademliaID) int 
 }
 
 func (routingTable *RoutingTable) Me() contact.Contact {
+	routingTable.mut.RLock()
+	defer routingTable.mut.RUnlock()
 	return routingTable.me
 }
