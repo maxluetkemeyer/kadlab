@@ -5,15 +5,15 @@ import (
 	"d7024e_group04/env"
 	"d7024e_group04/kademlia/contact"
 	"d7024e_group04/kademlia/kademliaid"
-	"d7024e_group04/kademlia/network/store"
 	"d7024e_group04/kademlia/routingtable"
 	"d7024e_group04/kademlia/store"
 	pb "d7024e_group04/proto"
 	"encoding/hex"
 	"fmt"
-	"google.golang.org/grpc"
 	"log"
 	"net"
+
+	"google.golang.org/grpc"
 )
 
 // Server represents the node grpc server
