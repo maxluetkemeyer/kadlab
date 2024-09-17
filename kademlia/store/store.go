@@ -1,6 +1,6 @@
 package store
 
 type Store interface {
-	SetValue(key string, value []byte)
-	GetValue(key string) (value []byte, error error)
+	SetValue(key string, value string)
+	GetValue(key string) (value string, error error)
 }

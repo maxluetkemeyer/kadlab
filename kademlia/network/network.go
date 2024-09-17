@@ -10,7 +10,7 @@ type ClientRPC interface {
 	SendPing(ctx context.Context, contact *contact.Contact) error
 	SendFindNode(ctx context.Context, contact *contact.Contact)
 	SendFindValue(ctx context.Context, hash string)
-	SendStore(ctx context.Context, data []byte)
+	SendStore(ctx context.Context, data string)
 }
 
 type ServerRPC interface {
