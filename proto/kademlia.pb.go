@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.34.2
 // 	protoc        v3.12.4
-// source: proto/kademlia.proto
+// source: proto/internal.proto
 
 package proto
 
