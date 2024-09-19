@@ -23,7 +23,7 @@ func (s *Server) FindValue(ctx context.Context, kademliaID *pb.KademliaID) (*pb.
 	nodes, errFindNodes := s.FindNode(ctx, kademliaID)
 
 	if errFindNodes != nil {
-		err = fmt.Errorf("Find Node error in Find value with error: %s", errFindNodes)
+		err = fmt.Errorf("find Node error in Find value with error: %s", errFindNodes)
 		return nil, err
 	}
 

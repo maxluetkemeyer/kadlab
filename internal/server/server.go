@@ -77,5 +77,14 @@ func (s *Server) Ping(ctx context.Context, sender *pb.Node) (*pb.Node, error) {
 }
 
 func (s *Server) FindNode(ctx context.Context, kademliaID *pb.KademliaID) (*pb.Nodes, error) {
-	panic("TODO")
+	// TODO this needs to make sure that sender node and itself is not included in response
+	candidates := s.routingTable.FindClosestContacts((*kademliaid.KademliaID)(kademliaID.Value), env.BucketSize)
+
+	nodes := make([]*pb.Node, 0, len(candidates))
+
+	for _, contact := range candidates {
+		nodes = append(nodes, &pb.Node{ID: &pb.KademliaID{Value: contact.ID.Bytes()}, IPWithPort: contact.Address})
+	}
+
+	return &pb.Nodes{Node: nodes}, nil
 }
