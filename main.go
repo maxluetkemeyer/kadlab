@@ -50,7 +50,7 @@ func main() {
 	})
 
 	errGroup.Go(func() error {
-		// TODO node bootstrap stuff
+		node.Bootstrap(errCtx)
 		return err
 	})
 

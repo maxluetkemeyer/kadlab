@@ -66,10 +66,10 @@ func (c *Client) SendPing(ctx context.Context, me *contact.Contact, target strin
 	return contact, nil
 }
 
-func (c *Client) SendFindNode(ctx context.Context, target *contact.Contact) (contact.ContactCandidates, error) {
+func (c *Client) SendFindNode(ctx context.Context, target *contact.Contact) ([]contact.Contact, error) {
 	conn, err := initConnection(target.Address, c.opts...)
 	if err != nil {
-		return contact.ContactCandidates{}, fmt.Errorf("failed to create connection to address: %v, err: %v", target.Address, err)
+		return nil, fmt.Errorf("failed to create connection to address: %v, err: %v", target.Address, err)
 	}
 
 	defer conn.Close()
@@ -82,10 +82,10 @@ func (c *Client) SendFindNode(ctx context.Context, target *contact.Contact) (con
 
 	resp, err := grpc.Find_Node(ctx, payload)
 	if err != nil {
-		return contact.ContactCandidates{}, fmt.Errorf("failed to send FIND_NODE RPC to address: %v, err: %v", target.Address, err)
+		return nil, fmt.Errorf("failed to send FIND_NODE RPC to address: %v, err: %v", target.Address, err)
 	}
 
-	var contacts contact.ContactCandidates
+	var contacts []contact.Contact
 	for _, node := range resp.Node {
 		id, err := kademliaid.NewKademliaIDFromBytes(node.ID.Value)
 		if err != nil {
@@ -94,7 +94,7 @@ func (c *Client) SendFindNode(ctx context.Context, target *contact.Contact) (con
 		}
 
 		newContact := contact.NewContact(id, node.IPWithPort)
-		contacts.Append([]contact.Contact{newContact})
+		contacts = append(contacts, newContact)
 	}
 
 	return contacts, nil

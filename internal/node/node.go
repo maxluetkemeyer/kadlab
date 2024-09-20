@@ -1,10 +1,12 @@
 package node
 
 import (
+	"container/list"
 	"context"
 	"fmt"
 
 	"d7024e_group04/env"
+	"d7024e_group04/internal/kademlia/bucket"
 	"d7024e_group04/internal/kademlia/contact"
 	"d7024e_group04/internal/kademlia/routingtable"
 	"d7024e_group04/internal/network"
@@ -28,7 +30,7 @@ func New(client network.ClientRPC, routingTable *routingtable.RoutingTable, stor
 func (n *Node) Bootstrap(ctx context.Context) error {
 	addresses, err := network.ResolveDNS(ctx, env.KnownDomain)
 	if err != nil {
-		return err;
+		return err
 	}
 
 	me := n.RoutingTable.Me()
@@ -39,7 +41,10 @@ func (n *Node) Bootstrap(ctx context.Context) error {
 
 	n.RoutingTable.AddContact(*contact)
 	// TODO: iterative search
-	n.Client.SendFindNode(ctx, &me)
+	// neighbors, err := n.Client.SendFindNode(ctx, &me)
+	// if err != nil {
+	// 	return err
+	// }
 
 	return nil
 }
@@ -55,8 +60,6 @@ func (n *Node) GetObject() {
 	panic("TODO")
 }
 
-
-
 // Ping each contact in <contacts> until one responeses and returns it.
 func (n *Node) pingContacts(ctx context.Context, me *contact.Contact, targets []string) (*contact.Contact, error) {
 	for _, target := range targets {
@@ -67,4 +70,44 @@ func (n *Node) pingContacts(ctx context.Context, me *contact.Contact, targets []
 	}
 
 	return nil, fmt.Errorf("unable to ping any contacts")
+}
+
+func (n *Node) findNode(ctx context.Context, target *contact.Contact, k int) ([]contact.Contact, error) {
+	contactedSet := contact.NewContactSet()
+
+	closestContacts := n.RoutingTable.FindClosestContacts(target.ID, k)
+
+	list := NewNodeList(k)
+	list.AddNodes(closestContacts, target)
+	for list.HasBeenModified() {
+		var notContactedList []contact.Contact
+		for _, contact := range list.GetClosest() {
+			if !contactedSet.Has(contact) {
+				notContactedList = append(notContactedList, contact)
+			}
+		}
+
+		for {
+			for i := 0; i < env.Alpha && i < len(notContactedList); i++ {
+				contact := notContactedList[i]
+				go func() {
+					contactedSet.Add(contact)
+					nodes, err := n.Client.SendFindNode(ctx, &contact)
+					if err != nil {
+						return
+					}
+
+					list.AddNodes(nodes, target)
+				}()
+			}
+
+			if !list.HasBeenModified() {
+
+			}
+		}
+		for _, contact := range list.GetClosest() {
+		}
+	}
+
+	return list.GetClosest(), nil
 }
