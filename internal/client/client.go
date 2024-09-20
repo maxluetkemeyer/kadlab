@@ -28,9 +28,10 @@ func NewClient(opts ...grpc.DialOption) *Client {
 	}
 }
 
-// initConnection returns a grpc connection to the target address
+// initConnection returns a grpc connection and client to the target address
 // It is callers responsibility to close the connection after use to prevent leakage
-func initConnection(address string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+func (c *Client) NewConnection(address string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+	opts = append(opts, c.opts...)
 	conn, err := grpc.NewClient(address, opts...)
 	if err != nil {
 		return nil, err

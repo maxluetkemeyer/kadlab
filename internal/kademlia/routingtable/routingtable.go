@@ -41,7 +41,7 @@ func (routingTable *RoutingTable) AddContact(contact contact.Contact) {
 }
 
 // FindClosestContacts finds the 'count' closest Contacts to the target in the RoutingTable
-func (routingTable *RoutingTable) FindClosestContacts(target *kademliaid.KademliaID, count int) []contact.Contact {
+func (routingTable *RoutingTable) FindClosestContacts(target *kademliaid.KademliaID, count int, blacklist ...*kademliaid.KademliaID) []contact.Contact {
 	// TODO: It is a slice of contacts
 	var candidates contact.ContactCandidates
 	// Find in which bucket the target should be
@@ -75,6 +75,11 @@ func (routingTable *RoutingTable) FindClosestContacts(target *kademliaid.Kademli
 	// Maybe we have too little
 	if count > candidates.Len() {
 		count = candidates.Len()
+	}
+
+	// make sure blacklisted id is not in list
+	for _, node := range blacklist {
+		candidates.RemoveID(node)
 	}
 
 	// If we have to much in our candidates, the get contacts function returns the right amount

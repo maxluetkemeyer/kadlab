@@ -1,43 +1,53 @@
 package client
 
 import (
+	"context"
+	"d7024e_group04/internal/kademlia/contact"
+	"d7024e_group04/internal/kademlia/kademliaid"
+	"reflect"
 	"testing"
+	"time"
+)
+
+var (
+	clientID      = kademliaid.NewRandomKademliaID()
+	clientAddress = "client address"
+
+	serverID      = kademliaid.NewRandomKademliaID()
+	serverAddress = "server address"
 )
 
 func TestClient_Ping(t *testing.T) {
-	// TODO
-	// mock.InitBufconn()
+	client := NewClient()
+	grpcClient := newMockGrpcClient(*serverID, serverAddress)
 
-	// routingTable := routingtable.NewRoutingTable(contact.NewContact(mock.ClientID, mock.ClientAddress))
+	clientContact := contact.NewContact(clientID, clientAddress)
+	serverContact := contact.NewContact(serverID, serverAddress)
 
-	// client := NewClient(grpc.WithContextDialer(mock.BufDialer))
+	t.Run("ping", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+		go TimeoutContext(ctx, cancel)
 
-	// t.Run("ping valid node", func(t *testing.T) {
-	// 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	// 	go mock.TimeoutContext(ctx, cancel)
+		resp, err := client.SendPing(ctx, grpcClient, &clientContact, &serverContact)
 
-	// 	target := contact.NewContact(mock.TargetID, "passthrough://bufnet")
-	// 	me := contact.NewContact(mock.ClientID, mock.ClientAddress)
+		if err != nil {
+			t.Fatalf("failed to ping, %v", err)
+		}
 
-	// 	candidates := routingTable.FindClosestContacts(mock.TargetID, 1)
+		if !reflect.DeepEqual(resp.ID.Bytes(), serverID.Bytes()) {
+			t.Fatalf("wrong node id in response, wanted %v got %v", serverID, resp.ID)
+		}
 
-	// 	if len(candidates) != 0 {
-	// 		t.Fatalf("target exists in routing table")
-	// 	}
+		if resp.Address != serverAddress {
+			t.Fatalf("wrong node address in response, wanted %v got %v", serverAddress, resp.Address)
+		}
+	})
+}
 
-	// 	if _, err := client.SendPing(ctx, &me, &target); err != nil {
-	// 		t.Fatalf("failed to ping, err: %v", err)
-	// 	}
-
-	// 	candidates = routingTable.FindClosestContacts(mock.TargetID, 1)
-
-	// 	if len(candidates) != 1 {
-	// 		t.Fatal("target was not added to routing table")
-	// 	}
-
-	// 	if !candidates[0].ID.Equals(mock.TargetID) {
-	// 		t.Fatalf("candidate is not target, expected: %v got: %v", mock.TargetID, candidates[0].ID)
-	// 	}
-
-	// })
+func TimeoutContext(ctx context.Context, cancel context.CancelFunc) {
+	<-ctx.Done()
+	// timeout test, did not shutdown on context cancel
+	time.Sleep(30 * time.Second)
+	cancel()
+	panic("context timed out but test did not finish")
 }
