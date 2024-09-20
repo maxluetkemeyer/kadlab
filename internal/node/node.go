@@ -41,7 +41,7 @@ func (n *Node) GetObject(rootCtx context.Context, hash string) (data string, err
 	dataChan := make(chan string)
 	kademliaHash := kademliaid.NewKademliaID(hash)
 
-	shortlist := n.RoutingTable.FindClosestContacts(kademliaHash, me.ID, env.BucketSize)
+	shortlist := n.RoutingTable.FindClosestContacts(kademliaHash, env.BucketSize, me.ID)
 
 	for {
 		select {

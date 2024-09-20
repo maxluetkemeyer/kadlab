@@ -71,8 +71,8 @@ func (c *Client) SendFindValue(ctx context.Context, me, target contact.Contact, 
 	grpc := pb.NewKademliaClient(conn)
 
 	payload := &pb.FindValueRequest{
-		Hash:     kademliaid.NewKademliaID(hash).Bytes(),
-		SenderID: me.ID.Bytes(),
+		Hash:           kademliaid.NewKademliaID(hash).Bytes(),
+		RequestingNode: &pb.Node{ID: me.ID.Bytes(), IPWithPort: me.Address},
 	}
 
 	resp, err := grpc.FindValue(ctx, payload)
@@ -81,13 +81,13 @@ func (c *Client) SendFindValue(ctx context.Context, me, target contact.Contact, 
 		return nil, "", fmt.Errorf("rpc server returned err: %v", err)
 	}
 
-	switch value := resp.Value.(type) {
-	case *pb.NodesOrData_Data:
-		return nil, value.Data, nil
+	switch respValue := resp.Value.(type) {
+	case *pb.FindValueResult_Data:
+		return nil, respValue.Data, nil
 
-	case *pb.NodesOrData_Nodes:
-		contacts := make([]contact.Contact, 0, len(value.Nodes.Node))
-		for _, node := range value.Nodes.Node {
+	case *pb.FindValueResult_Nodes:
+		contacts := make([]contact.Contact, 0, len(respValue.Nodes.Nodes))
+		for _, node := range respValue.Nodes.Nodes {
 			contacts = append(contacts, pbNodeToContact(node))
 		}
 		candidates.Append(contacts)

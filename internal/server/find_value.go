@@ -7,22 +7,22 @@ import (
 )
 
 // TODO: Input Validation, Tests, Error handling in string, getvalue, ...
-func (s *Server) FindValue(ctx context.Context, request *pb.FindValueRequest) (*pb.NodesOrData, error) {
+func (s *Server) FindValue(ctx context.Context, request *pb.FindValueRequest) (*pb.FindValueResult, error) {
 	key := string(request.Hash)
 
 	value, err := s.store.GetValue(key)
 
 	if err == nil {
-		return &pb.NodesOrData{
-			Value: &pb.NodesOrData_Data{
+		return &pb.FindValueResult{
+			Value: &pb.FindValueResult_Data{
 				Data: value,
 			},
 		}, nil
 	}
 
 	payload := &pb.FindNodeRequest{
-		TargetID: request.Hash,
-		SenderID: s.id.Bytes(),
+		TargetID:       request.Hash,
+		RequestingNode: &pb.Node{ID: s.id.Bytes(), IPWithPort: s.address},
 	}
 
 	nodes, errFindNodes := s.FindNode(ctx, payload)
@@ -32,8 +32,8 @@ func (s *Server) FindValue(ctx context.Context, request *pb.FindValueRequest) (*
 		return nil, err
 	}
 
-	return &pb.NodesOrData{
-		Value: &pb.NodesOrData_Nodes{
+	return &pb.FindValueResult{
+		Value: &pb.FindValueResult_Nodes{
 			Nodes: nodes,
 		},
 	}, nil

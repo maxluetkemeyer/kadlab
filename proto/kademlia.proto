@@ -6,28 +6,29 @@ package proto;
 
 service Kademlia {
     rpc Ping (Node) returns (Node) {}
-    rpc FindNode (FindNodeRequest) returns (Nodes) {}
-    rpc FindValue (FindValueRequest) returns (NodesOrData) {}
-    rpc Store (Content) returns (StoreResult) {}
+    rpc FindNode (FindNodeRequest) returns (FindNodeResult) {}
+    rpc FindValue (FindValueRequest) returns (FindValueResult) {}
+    rpc Store (StoreRequest) returns (StoreResult) {}
 }
 
-message StoreResult {
-    bool Success = 1;
-}
-
-message Content {
+message StoreRequest {
     bytes Key = 1;
     string Value = 2;
+    Node RequestingNode = 3;
 }
 
 message FindValueRequest {
     bytes Hash = 1;
-    bytes SenderID = 2;
+    Node RequestingNode = 2;
 }
 
 message FindNodeRequest {
     bytes TargetID = 1;
-    bytes SenderID = 2;
+    Node RequestingNode = 2;
+}
+
+message StoreResult {
+    bool Success = 1;
 }
 
 message Node {
@@ -35,13 +36,13 @@ message Node {
     string IPWithPort = 2;
 }
 
-message Nodes {
-    repeated Node Node = 1;
+message FindNodeResult {
+    repeated Node Nodes = 1;
 }
 
-message NodesOrData {
+message FindValueResult {
     oneof Value {
-        Nodes Nodes = 1;
+        FindNodeResult Nodes = 1;
         string Data = 2;
     }
 }

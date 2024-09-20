@@ -16,9 +16,9 @@ type ClientRPC interface {
 type ServerRPC interface {
 	Start(ctx context.Context) error
 	Ping(ctx context.Context, sender *pb.Node) (*pb.Node, error)
-	FindValue(ctx context.Context, request *pb.FindValueRequest) (*pb.NodesOrData, error)
-	FindNode(ctx context.Context, request *pb.FindNodeRequest) (*pb.Nodes, error)
-	Store(ctx context.Context, context *pb.Content) (*pb.StoreResult, error)
+	FindValue(ctx context.Context, request *pb.FindValueRequest) (*pb.FindValueResult, error)
+	FindNode(ctx context.Context, request *pb.FindNodeRequest) (*pb.FindNodeResult, error)
+	Store(ctx context.Context, context *pb.StoreRequest) (*pb.StoreResult, error)
 }
 
 type Network interface {

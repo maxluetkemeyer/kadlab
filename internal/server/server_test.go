@@ -98,13 +98,13 @@ func TestServer_FindNode(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 		go TimeoutContext(ctx, cancel)
 
-		resp, err := srv.FindNode(ctx, &pb.FindNodeRequest{TargetID: targetID.Bytes(), SenderID: SenderID.Bytes()})
+		resp, err := srv.FindNode(ctx, &pb.FindNodeRequest{TargetID: targetID.Bytes(), RequestingNode: &pb.Node{ID: SenderID.Bytes(), IPWithPort: SenderAddress}})
 
 		if err != nil {
 			t.Fatalf("rpc FindNode failed, %v", err)
 		}
 
-		nodes := resp.Node
+		nodes := resp.Nodes
 
 		if len(nodes) <= 0 {
 			t.Fatalf("empty response")
