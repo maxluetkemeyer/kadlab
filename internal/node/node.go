@@ -1,14 +1,12 @@
 package node
 
 import (
-	"container/list"
 	"context"
 	"fmt"
-	"sync"
 
 	"d7024e_group04/env"
-	"d7024e_group04/internal/kademlia/bucket"
 	"d7024e_group04/internal/kademlia/contact"
+	"d7024e_group04/internal/kademlia/kademliaid"
 	"d7024e_group04/internal/kademlia/routingtable"
 	"d7024e_group04/internal/network"
 	"d7024e_group04/internal/store"
@@ -121,7 +119,7 @@ func (n *Node) pingContacts(ctx context.Context, me *contact.Contact, targetIps 
 	for _, targetIp := range targetIps {
 		contact, err := n.Client.SendPing(ctx, me, targetIp)
 		if err == nil {
-			return &contact, nil
+			return contact, nil
 		}
 	}
 

@@ -3,7 +3,6 @@ package node
 import (
 	"d7024e_group04/internal/kademlia/contact"
 	"slices"
-	"sort"
 	"sync"
 )
 

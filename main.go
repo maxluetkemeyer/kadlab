@@ -4,6 +4,12 @@ package main
 
 import (
 	"context"
+	"log"
+	"os"
+	"os/signal"
+	"strconv"
+	"syscall"
+
 	"d7024e_group04/api"
 	"d7024e_group04/cli"
 	"d7024e_group04/env"
@@ -11,14 +17,10 @@ import (
 	"d7024e_group04/internal/kademlia/contact"
 	"d7024e_group04/internal/kademlia/kademliaid"
 	"d7024e_group04/internal/kademlia/routingtable"
+	"d7024e_group04/internal/network"
 	"d7024e_group04/internal/node"
 	"d7024e_group04/internal/server"
 	"d7024e_group04/internal/store"
-	"log"
-	"os"
-	"os/signal"
-	"strconv"
-	"syscall"
 
 	"golang.org/x/sync/errgroup"
 )
@@ -44,7 +46,7 @@ func main() {
 
 	client := client.NewClient()
 
-	node := node.New(client, routingTable, memoryStore)
+	node := node.New(client, routingTable, memoryStore, &network.PublicNetwork{})
 
 	server := server.NewServer(routingTable, memoryStore)
 	errGroup.Go(func() error {

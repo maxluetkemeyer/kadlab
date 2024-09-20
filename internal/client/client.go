@@ -42,7 +42,7 @@ func (c *Client) NewConnection(address string, opts ...grpc.DialOption) (*grpc.C
 
 // SendPingMessage sends an rpc call to the target contact. If a reply is received the bucket is updated with the target contact.
 func (c *Client) SendPing(ctx context.Context, me *contact.Contact, target string) (*contact.Contact, error) {
-	conn, err := initConnection(target, c.opts...)
+	conn, err := c.NewConnection(target)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create connection to address: %v, err: %v", target, err)
 	}
@@ -67,8 +67,8 @@ func (c *Client) SendPing(ctx context.Context, me *contact.Contact, target strin
 	return &contact, nil
 }
 
-func (c *Client) SendFindNode(ctx context.Context, target *contact.Contact) ([]contact.Contact, error) {
-	conn, err := initConnection(target.Address, c.opts...)
+func (c *Client) SendFindNode(ctx context.Context, me, target *contact.Contact) ([]contact.Contact, error) {
+	conn, err := c.NewConnection(target.Address)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create connection to address: %v, err: %v", target.Address, err)
 	}
@@ -77,18 +77,19 @@ func (c *Client) SendFindNode(ctx context.Context, target *contact.Contact) ([]c
 
 	grpc := pb.NewKademliaClient(conn)
 
-	payload := &pb.KademliaID{
-		Value: target.ID.Bytes(),
+	payload := &pb.FindNodeRequest{
+		TargetID: target.ID.Bytes(),
+		RequestingNode: &pb.Node{ID: me.ID.Bytes(), IPWithPort: me.Address},
 	}
 
-	resp, err := grpc.Find_Node(ctx, payload)
+	resp, err := grpc.FindNode(ctx, payload)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send FIND_NODE RPC to address: %v, err: %v", target.Address, err)
 	}
 
 	var contacts []contact.Contact
-	for _, node := range resp.Node {
-		id, err := kademliaid.NewKademliaIDFromBytes(node.ID.Value)
+	for _, node := range resp.Nodes {
+		id, err := kademliaid.NewKademliaIDFromBytes(node.ID)
 		if err != nil {
 			log.Printf("ERROR: %v\n", err)
 			continue
