@@ -3,7 +3,6 @@ package node
 import (
 	"context"
 	"fmt"
-	"sync"
 
 	"d7024e_group04/env"
 	"d7024e_group04/internal/kademlia/contact"
@@ -17,7 +16,7 @@ type Node struct {
 	Client       network.ClientRPC
 	RoutingTable *routingtable.RoutingTable
 	Store        store.Store
-	kNet		 network.Network
+	kNet         network.Network
 }
 
 func New(client network.ClientRPC, routingTable *routingtable.RoutingTable, store store.Store, kNet network.Network) *Node {
@@ -25,16 +24,16 @@ func New(client network.ClientRPC, routingTable *routingtable.RoutingTable, stor
 		Client:       client,
 		RoutingTable: routingTable,
 		Store:        store,
-		kNet:		  kNet,
+		kNet:         kNet,
 	}
 }
 
 /*
-	* A node joins the network as follows:
-      1. if it does not already have a nodeID n, it generates one
-      2. it inserts the value of some known node c into the appropriate bucket as its first contact
-      3. it does an iterativeFindNode for n
-      4. it refreshes all buckets further away than its closest neighbor, which will be in the occupied bucket with the lowest index.
+- A node joins the network as follows:
+ 1. if it does not already have a nodeID n, it generates one
+ 2. it inserts the value of some known node c into the appropriate bucket as its first contact
+ 3. it does an iterativeFindNode for n
+ 4. it refreshes all buckets further away than its closest neighbor, which will be in the occupied bucket with the lowest index.
 */
 func (n *Node) Bootstrap(ctx context.Context) error {
 	addresses, err := n.kNet.ResolveDNS(ctx, env.KnownDomain)
@@ -49,15 +48,13 @@ func (n *Node) Bootstrap(ctx context.Context) error {
 	}
 
 	n.RoutingTable.AddContact(*contact)
-	// TODO: iterative search
-	// neighbors, err := n.Client.SendFindNode(ctx, &me)
-	// if err != nil {
-	// 	return err
-	// }
+	// TODO: iterative search, should we update once for the list or for each node visited in findNode?
+	closestContacts := n.findNode(ctx, &me)
+	for _, contact := range closestContacts {
+		n.RoutingTable.AddContact(contact)
+	}
 
-	// 4. Automatically done via AddContact()
-
-	panic("unimplemented")
+	return nil
 }
 
 // Put takes content of the file and outputs the hash of the object
@@ -125,48 +122,4 @@ func (n *Node) pingContacts(ctx context.Context, me *contact.Contact, targetIps 
 	}
 
 	return nil, fmt.Errorf("unable to ping any contacts")
-}
-
-
-func (n *Node) findNode(ctx context.Context, target *contact.Contact, k int) ([]contact.Contact, error) {
-	contactedSet := contact.NewContactSet()
-	me := n.RoutingTable.Me()
-
-	closestContacts := n.RoutingTable.FindClosestContacts(target.ID, k)
-
-	list := NewNodeList(k)
-	list.AddNodes(closestContacts, target)
-	for list.HasBeenModified() {
-		list.ResetModifiedFlag()
-		var notContactedList []contact.Contact
-		for _, contact := range list.GetClosest() {
-			if !contactedSet.Has(contact) {
-				notContactedList = append(notContactedList, contact)
-			}
-		}
-
-		j := 0
-		for !list.HasBeenModified() && j < len(notContactedList) {
-			var wg sync.WaitGroup
-			wg.Add(env.Alpha)
-			for i := j; i < env.Alpha+j && i < len(notContactedList); i++ {
-				contact := notContactedList[i]
-				go func() {
-					defer wg.Done()
-					contactedSet.Add(contact)
-					nodes, err := n.Client.SendFindNode(ctx, &me, &contact)
-					if err != nil {
-						return
-					}
-
-					list.AddNodes(nodes, target)
-				}()
-			}
-
-			wg.Wait()
-			j += env.Alpha
-		}
-	}
-
-	return list.GetClosest(), nil
 }

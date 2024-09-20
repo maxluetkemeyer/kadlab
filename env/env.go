@@ -3,10 +3,12 @@ package env
 import (
 	"os"
 	"strconv"
+	"time"
 )
 
 const IDLength = 20
 const Alpha = 3 // degree of parallelism
+const RPCTimeout = 5 * time.Second
 
 var ApiPort = 8080
 var Port = 50051

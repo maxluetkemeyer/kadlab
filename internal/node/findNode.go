@@ -2,67 +2,129 @@ package node
 
 import (
 	"context"
+	"log"
+	"slices"
 	"sync"
 
 	"d7024e_group04/env"
 	"d7024e_group04/internal/kademlia/contact"
 )
 
-func (n *Node) findNode(ctx context.Context, target *contact.Contact) ([]contact.Contact, error) {
+type kClosestList struct {
+	mut     sync.RWMutex
+	list    []contact.Contact
+	updated bool
+}
+
+func (n *Node) findNode(rootCtx context.Context, target *contact.Contact) []contact.Contact {
 	alpha := env.Alpha
 	k := env.BucketSize
 	visitedSet := contact.NewContactSet()
 	me := n.RoutingTable.Me()
-	var kClosets []contact.Contact
-	updated := false
+	kClosets := kClosestList{}
 
-	responseContactChannel := make(chan []contact.Contact, k*alpha)
+	wg := new(sync.WaitGroup)
 
-	kClosets = n.RoutingTable.FindClosestContacts(target.ID, k)
+	responseContactChannel := make(chan []contact.Contact, k*alpha) // TODO look at size
+
+	kClosets.list = n.RoutingTable.FindClosestContacts(target.ID, k)
 
 	for {
-		updated = false
-		var candidates contact.ContactCandidates
-		for _, closeContact := range kClosets {
+		kClosets.updated = false
+
+		// get kClosest that are unvisited
+		// TODO fix, tried to use contact.candidates but did not work. find some nicer way
+		var candidates []contact.Contact
+		for _, closeContact := range kClosets.list {
 			if !visitedSet.Has(closeContact) {
-				contactSlice := []contact.Contact{closeContact}
-				candidates.Append(contactSlice)
+				candidates = append(candidates, closeContact)
 			}
 		}
-		candidates.Sort()
+		// candidates should already be sorted
+
+		// Goroutines, strict parallelism
+		ctx, cancel := context.WithTimeout(rootCtx, env.RPCTimeout)
+		for i := 0; i < alpha && i < len(candidates); i++ {
+			wg.Add(1)
+			visitedSet.Add(candidates[i])
+
+			go func() {
+				defer wg.Done()
+				contacts, err := n.Client.SendFindNode(ctx, &me, &candidates[i])
+
+				if err != nil {
+					kClosets.remove(candidates[i])
+					// TODO fix logging solution
+					log.Printf("WARNING: findNode error: %v", err)
+					return
+				}
+
+				responseContactChannel <- contacts
+			}()
+		}
+
+		wg.Wait()
+		cancel() //TODO maybe move
+
+		for contacts := range responseContactChannel {
+			for _, contact := range contacts {
+				contact.CalcDistance(target.ID)
+
+				// TODO refactor ifs
+				if len(kClosets.list) < k {
+					kClosets.list = append(kClosets.list, contact)
+					kClosets.sort()
+					kClosets.updated = true
+				} else {
+					if contact.Less(&kClosets.list[k-1]) {
+						kClosets.list[k-1] = contact
+						kClosets.sort()
+						kClosets.updated = true
+					}
+				}
+			}
+		}
+
+		// can we terminate?
+		if !kClosets.updated && kClosets.isSubset(visitedSet) {
+			return kClosets.list
+		}
+	}
+}
+
+func (kClosestList *kClosestList) isSubset(set *contact.ContactSet) bool {
+	for _, contact := range kClosestList.list {
+		if !set.Has(contact) {
+			return false
+		}
+	}
+	return true
+}
+
+func (kClosestList *kClosestList) sort() {
+	kClosestList.mut.Lock()
+	defer kClosestList.mut.Unlock()
+	slices.SortStableFunc(kClosestList.list, func(a, b contact.Contact) int {
+		if a.Less(&b) {
+			return -1
+		} else {
+			return 1
+		}
+	})
+}
+
+// TODO make good
+func (kClosestList *kClosestList) remove(target contact.Contact) {
+	kClosestList.mut.Lock()
+	defer kClosestList.mut.Unlock()
+
+	var contactList []contact.Contact
+
+	for _, contact := range kClosestList.list {
+		if !contact.ID.Equals(target.ID) {
+			contactList = append(contactList, contact)
+		}
 	}
 
-	// for list.HasBeenModified() {
-	// 	list.ResetModifiedFlag()
-	// 	var notContactedList []contact.Contact
-	// 	for _, contact := range list.GetClosest() {
-	// 		if !visitedSet.Has(contact) {
-	// 			notContactedList = append(notContactedList, contact)
-	// 		}
-	// 	}
-	//
-	// 	j := 0
-	// 	for !list.HasBeenModified() && j < len(notContactedList) {
-	// 		var wg sync.WaitGroup
-	// 		wg.Add(alpha)
-	// 		for i := j; i < alpha+j && i < len(notContactedList); i++ {
-	// 			contact := notContactedList[i]
-	// 			go func() {
-	// 				defer wg.Done()
-	// 				visitedSet.Add(contact)
-	// 				nodes, err := n.Client.SendFindNode(ctx, &me, &contact)
-	// 				if err != nil {
-	// 					return
-	// 				}
-	//
-	// 				list.AddNodes(nodes, target)
-	// 			}()
-	// 		}
-	//
-	// 		wg.Wait()
-	// 		j += alpha
-	// 	}
-	// }
-
-	return list.GetClosest(), nil
+	kClosestList.list = contactList
 }
