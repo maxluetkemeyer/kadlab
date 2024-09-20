@@ -10,6 +10,7 @@ const IDLength = 20
 var ApiPort = 8080
 var Port = 50051
 var BucketSize = 20
+var KnownDomain = "dockerrb"
 
 func init() {
 	port := os.Getenv("PORT")
