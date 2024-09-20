@@ -80,3 +80,11 @@ func (candidates *ContactCandidates) Swap(i, j int) {
 func (candidates *ContactCandidates) Less(i, j int) bool {
 	return candidates.contacts[i].Less(&candidates.contacts[j])
 }
+
+func (candidates *ContactCandidates) RemoveID(id *kademliaid.KademliaID) {
+	for idx, contact := range candidates.contacts {
+		if contact.ID.Equals(id) {
+			candidates.contacts = append(candidates.contacts[:idx], candidates.contacts[idx+1:]...)
+		}
+	}
+}

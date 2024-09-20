@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v3.12.4
-// source: proto/internal.proto
+// source: proto/kademlia.proto
 
 package proto
 
@@ -19,10 +19,10 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Kademlia_Ping_FullMethodName       = "/proto.Kademlia/Ping"
-	Kademlia_Find_Node_FullMethodName  = "/proto.Kademlia/Find_Node"
-	Kademlia_Find_Value_FullMethodName = "/proto.Kademlia/Find_Value"
-	Kademlia_Store_FullMethodName      = "/proto.Kademlia/Store"
+	Kademlia_Ping_FullMethodName      = "/proto.Kademlia/Ping"
+	Kademlia_FindNode_FullMethodName  = "/proto.Kademlia/FindNode"
+	Kademlia_FindValue_FullMethodName = "/proto.Kademlia/FindValue"
+	Kademlia_Store_FullMethodName     = "/proto.Kademlia/Store"
 )
 
 // KademliaClient is the client API for Kademlia service.
@@ -30,9 +30,9 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type KademliaClient interface {
 	Ping(ctx context.Context, in *Node, opts ...grpc.CallOption) (*Node, error)
-	Find_Node(ctx context.Context, in *KademliaID, opts ...grpc.CallOption) (*Nodes, error)
-	Find_Value(ctx context.Context, in *KademliaID, opts ...grpc.CallOption) (*NodesOrData, error)
-	Store(ctx context.Context, in *Content, opts ...grpc.CallOption) (*StoreResult, error)
+	FindNode(ctx context.Context, in *FindNodeRequest, opts ...grpc.CallOption) (*FindNodeResult, error)
+	FindValue(ctx context.Context, in *FindValueRequest, opts ...grpc.CallOption) (*FindValueResult, error)
+	Store(ctx context.Context, in *StoreRequest, opts ...grpc.CallOption) (*StoreResult, error)
 }
 
 type kademliaClient struct {
@@ -53,27 +53,27 @@ func (c *kademliaClient) Ping(ctx context.Context, in *Node, opts ...grpc.CallOp
 	return out, nil
 }
 
-func (c *kademliaClient) Find_Node(ctx context.Context, in *KademliaID, opts ...grpc.CallOption) (*Nodes, error) {
+func (c *kademliaClient) FindNode(ctx context.Context, in *FindNodeRequest, opts ...grpc.CallOption) (*FindNodeResult, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Nodes)
-	err := c.cc.Invoke(ctx, Kademlia_Find_Node_FullMethodName, in, out, cOpts...)
+	out := new(FindNodeResult)
+	err := c.cc.Invoke(ctx, Kademlia_FindNode_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *kademliaClient) Find_Value(ctx context.Context, in *KademliaID, opts ...grpc.CallOption) (*NodesOrData, error) {
+func (c *kademliaClient) FindValue(ctx context.Context, in *FindValueRequest, opts ...grpc.CallOption) (*FindValueResult, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(NodesOrData)
-	err := c.cc.Invoke(ctx, Kademlia_Find_Value_FullMethodName, in, out, cOpts...)
+	out := new(FindValueResult)
+	err := c.cc.Invoke(ctx, Kademlia_FindValue_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *kademliaClient) Store(ctx context.Context, in *Content, opts ...grpc.CallOption) (*StoreResult, error) {
+func (c *kademliaClient) Store(ctx context.Context, in *StoreRequest, opts ...grpc.CallOption) (*StoreResult, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(StoreResult)
 	err := c.cc.Invoke(ctx, Kademlia_Store_FullMethodName, in, out, cOpts...)
@@ -88,9 +88,9 @@ func (c *kademliaClient) Store(ctx context.Context, in *Content, opts ...grpc.Ca
 // for forward compatibility.
 type KademliaServer interface {
 	Ping(context.Context, *Node) (*Node, error)
-	Find_Node(context.Context, *KademliaID) (*Nodes, error)
-	Find_Value(context.Context, *KademliaID) (*NodesOrData, error)
-	Store(context.Context, *Content) (*StoreResult, error)
+	FindNode(context.Context, *FindNodeRequest) (*FindNodeResult, error)
+	FindValue(context.Context, *FindValueRequest) (*FindValueResult, error)
+	Store(context.Context, *StoreRequest) (*StoreResult, error)
 	mustEmbedUnimplementedKademliaServer()
 }
 
@@ -104,13 +104,13 @@ type UnimplementedKademliaServer struct{}
 func (UnimplementedKademliaServer) Ping(context.Context, *Node) (*Node, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
 }
-func (UnimplementedKademliaServer) Find_Node(context.Context, *KademliaID) (*Nodes, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Find_Node not implemented")
+func (UnimplementedKademliaServer) FindNode(context.Context, *FindNodeRequest) (*FindNodeResult, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FindNode not implemented")
 }
-func (UnimplementedKademliaServer) Find_Value(context.Context, *KademliaID) (*NodesOrData, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Find_Value not implemented")
+func (UnimplementedKademliaServer) FindValue(context.Context, *FindValueRequest) (*FindValueResult, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FindValue not implemented")
 }
-func (UnimplementedKademliaServer) Store(context.Context, *Content) (*StoreResult, error) {
+func (UnimplementedKademliaServer) Store(context.Context, *StoreRequest) (*StoreResult, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Store not implemented")
 }
 func (UnimplementedKademliaServer) mustEmbedUnimplementedKademliaServer() {}
@@ -152,44 +152,44 @@ func _Kademlia_Ping_Handler(srv interface{}, ctx context.Context, dec func(inter
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Kademlia_Find_Node_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(KademliaID)
+func _Kademlia_FindNode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FindNodeRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(KademliaServer).Find_Node(ctx, in)
+		return srv.(KademliaServer).FindNode(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Kademlia_Find_Node_FullMethodName,
+		FullMethod: Kademlia_FindNode_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KademliaServer).Find_Node(ctx, req.(*KademliaID))
+		return srv.(KademliaServer).FindNode(ctx, req.(*FindNodeRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Kademlia_Find_Value_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(KademliaID)
+func _Kademlia_FindValue_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FindValueRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(KademliaServer).Find_Value(ctx, in)
+		return srv.(KademliaServer).FindValue(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Kademlia_Find_Value_FullMethodName,
+		FullMethod: Kademlia_FindValue_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KademliaServer).Find_Value(ctx, req.(*KademliaID))
+		return srv.(KademliaServer).FindValue(ctx, req.(*FindValueRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Kademlia_Store_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Content)
+	in := new(StoreRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -201,7 +201,7 @@ func _Kademlia_Store_Handler(srv interface{}, ctx context.Context, dec func(inte
 		FullMethod: Kademlia_Store_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KademliaServer).Store(ctx, req.(*Content))
+		return srv.(KademliaServer).Store(ctx, req.(*StoreRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -218,12 +218,12 @@ var Kademlia_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Kademlia_Ping_Handler,
 		},
 		{
-			MethodName: "Find_Node",
-			Handler:    _Kademlia_Find_Node_Handler,
+			MethodName: "FindNode",
+			Handler:    _Kademlia_FindNode_Handler,
 		},
 		{
-			MethodName: "Find_Value",
-			Handler:    _Kademlia_Find_Value_Handler,
+			MethodName: "FindValue",
+			Handler:    _Kademlia_FindValue_Handler,
 		},
 		{
 			MethodName: "Store",
@@ -231,5 +231,5 @@ var Kademlia_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto/internal.proto",
+	Metadata: "proto/kademlia.proto",
 }

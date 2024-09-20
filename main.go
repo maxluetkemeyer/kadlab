@@ -69,7 +69,7 @@ func main() {
 
 	// CLI loop
 	errGroup.Go(func() error {
-		return cli.InputLoop(cancelCtx, os.Stdin, node)
+		return cli.InputLoop(errCtx, cancelCtx, os.Stdin, node)
 	})
 
 	err = errGroup.Wait()

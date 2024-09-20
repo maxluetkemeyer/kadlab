@@ -28,9 +28,10 @@ func NewClient(opts ...grpc.DialOption) *Client {
 	}
 }
 
-// initConnection returns a grpc connection to the target address
+// initConnection returns a grpc connection and client to the target address
 // It is callers responsibility to close the connection after use to prevent leakage
-func initConnection(address string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+func (c *Client) NewConnection(address string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+	opts = append(opts, c.opts...)
 	conn, err := grpc.NewClient(address, opts...)
 	if err != nil {
 		return nil, err
@@ -51,7 +52,7 @@ func (c *Client) SendPing(ctx context.Context, me *contact.Contact, target strin
 	grpc := pb.NewKademliaClient(conn)
 
 	payload := &pb.Node{
-		ID:         &pb.KademliaID{Value: me.ID.Bytes()},
+		ID:         me.ID.Bytes(),
 		IPWithPort: me.Address,
 	}
 
@@ -100,8 +101,43 @@ func (c *Client) SendFindNode(ctx context.Context, target *contact.Contact) ([]c
 	return contacts, nil
 }
 
-func (c *Client) SendFindValue(ctx context.Context, hash string) (string, error) {
-	panic("TODO")
+func (c *Client) SendFindValue(ctx context.Context, me, target contact.Contact, hash string) (candidates *contact.ContactCandidates, data string, err error) {
+	conn, err := c.NewConnection(target.Address)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to create connection to address: %v, err: %v", target.Address, err)
+	}
+
+	defer conn.Close()
+
+	grpc := pb.NewKademliaClient(conn)
+
+	payload := &pb.FindValueRequest{
+		Hash:           kademliaid.NewKademliaID(hash).Bytes(),
+		RequestingNode: &pb.Node{ID: me.ID.Bytes(), IPWithPort: me.Address},
+	}
+
+	resp, err := grpc.FindValue(ctx, payload)
+
+	if err != nil {
+		return nil, "", fmt.Errorf("rpc server returned err: %v", err)
+	}
+
+	switch respValue := resp.Value.(type) {
+	case *pb.FindValueResult_Data:
+		return nil, respValue.Data, nil
+
+	case *pb.FindValueResult_Nodes:
+		contacts := make([]contact.Contact, 0, len(respValue.Nodes.Nodes))
+		for _, node := range respValue.Nodes.Nodes {
+			contacts = append(contacts, pbNodeToContact(node))
+		}
+		candidates.Append(contacts)
+
+		return candidates, "", nil
+
+	default:
+		return nil, "", fmt.Errorf("response type invalid")
+	}
 }
 
 func (c *Client) SendStore(ctx context.Context, data string) error {
@@ -109,5 +145,5 @@ func (c *Client) SendStore(ctx context.Context, data string) error {
 }
 
 func pbNodeToContact(node *pb.Node) contact.Contact {
-	return contact.NewContact((*kademliaid.KademliaID)(node.ID.Value), node.IPWithPort)
+	return contact.NewContact((*kademliaid.KademliaID)(node.ID), node.IPWithPort)
 }

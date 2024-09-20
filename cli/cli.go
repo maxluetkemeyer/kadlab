@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-func InputLoop(cancelCtx context.CancelFunc, stdin io.Reader, node *node.Node) error {
+func InputLoop(ctx context.Context, cancelCtx context.CancelFunc, stdin io.Reader, node *node.Node) error {
 	reader := bufio.NewReader(os.Stdin)
 
 	for {
@@ -28,11 +28,16 @@ func InputLoop(cancelCtx context.CancelFunc, stdin io.Reader, node *node.Node) e
 				node.PutObject()
 				panic("TODO")
 			case "get":
-				node.GetObject()
+				hash := command[1]
+				if hash == "" {
+					fmt.Println("no hash was provided")
+					break
+				}
+				node.GetObject(ctx, hash)
 				panic("TODO")
 			case "exit":
 				cancelCtx()
-				return context.Canceled
+				return ctx.Err()
 			case "forget":
 				panic("TODO")
 			default:
