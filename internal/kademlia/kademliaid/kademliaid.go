@@ -47,6 +47,7 @@ func NewRandomKademliaID() *KademliaID {
 	return &newKademliaID
 }
 
+// TODO: test function
 func NewKademliaIDFromBytes(data []byte) (*KademliaID, error) {
 	if (len(data) == env.IDLength) {
 		return (*KademliaID)(data), nil
