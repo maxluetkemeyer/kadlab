@@ -3,6 +3,7 @@ package node
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"d7024e_group04/env"
 	"d7024e_group04/internal/kademlia/contact"
@@ -124,4 +125,48 @@ func (n *Node) pingContacts(ctx context.Context, me *contact.Contact, targetIps 
 	}
 
 	return nil, fmt.Errorf("unable to ping any contacts")
+}
+
+
+func (n *Node) findNode(ctx context.Context, target *contact.Contact, k int) ([]contact.Contact, error) {
+	contactedSet := contact.NewContactSet()
+	me := n.RoutingTable.Me()
+
+	closestContacts := n.RoutingTable.FindClosestContacts(target.ID, k)
+
+	list := NewNodeList(k)
+	list.AddNodes(closestContacts, target)
+	for list.HasBeenModified() {
+		list.ResetModifiedFlag()
+		var notContactedList []contact.Contact
+		for _, contact := range list.GetClosest() {
+			if !contactedSet.Has(contact) {
+				notContactedList = append(notContactedList, contact)
+			}
+		}
+
+		j := 0
+		for !list.HasBeenModified() && j < len(notContactedList) {
+			var wg sync.WaitGroup
+			wg.Add(env.Alpha)
+			for i := j; i < env.Alpha+j && i < len(notContactedList); i++ {
+				contact := notContactedList[i]
+				go func() {
+					defer wg.Done()
+					contactedSet.Add(contact)
+					nodes, err := n.Client.SendFindNode(ctx, &me, &contact)
+					if err != nil {
+						return
+					}
+
+					list.AddNodes(nodes, target)
+				}()
+			}
+
+			wg.Wait()
+			j += env.Alpha
+		}
+	}
+
+	return list.GetClosest(), nil
 }
