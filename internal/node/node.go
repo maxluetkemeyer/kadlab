@@ -1,6 +1,8 @@
 package node
 
 import (
+	"context"
+	"d7024e_group04/internal/kademlia/kademliaid"
 	"d7024e_group04/internal/kademlia/routingtable"
 	"d7024e_group04/internal/network"
 	"d7024e_group04/internal/store"
@@ -26,7 +28,11 @@ func (n *Node) PutObject() {
 }
 
 // Get takes hash and outputs the contents of the object and the node it was retrieved
-func (n *Node) GetObject() {
-	// check store, if not found then do clientRPC call
-	panic("TODO")
+func (n *Node) GetObject(ctx context.Context, hash *kademliaid.KademliaID) (string, error) {
+	// check local store, if it was not found do clientRPC call
+	if value, err := n.Store.GetValue(hash.String()); err == nil {
+		return value, nil
+	}
+
+	return n.Client.SendFindValue(ctx, hash)
 }
