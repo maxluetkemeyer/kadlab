@@ -33,9 +33,9 @@ func New(client network.ClientRPC, routingTable *routingtable.RoutingTable, stor
 /*
 	* A node joins the network as follows:
       1. if it does not already have a nodeID n, it generates one
-      2.  it inserts the value of some known node c into the appropriate bucket as its first contact
-      3.  it does an iterativeFindNode for n
-      4.  it refreshes all buckets further away than its closest neighbor, which will be in the occupied bucket with the lowest index.
+      2. it inserts the value of some known node c into the appropriate bucket as its first contact
+      3. it does an iterativeFindNode for n
+      4. it refreshes all buckets further away than its closest neighbor, which will be in the occupied bucket with the lowest index.
 */
 func (n *Node) Bootstrap(ctx context.Context) error {
 	addresses, err := n.kNet.ResolveDNS(ctx, env.KnownDomain)
@@ -83,46 +83,4 @@ func (n *Node) pingContacts(ctx context.Context, me *contact.Contact, targetIps 
 	}
 
 	return nil, fmt.Errorf("unable to ping any contacts")
-}
-
-func (n *Node) findNode(ctx context.Context, target *contact.Contact, k int) ([]contact.Contact, error) {
-	contactedSet := contact.NewContactSet()
-
-	closestContacts := n.RoutingTable.FindClosestContacts(target.ID, k)
-
-	list := NewNodeList(k)
-	list.AddNodes(closestContacts, target)
-	for list.HasBeenModified() {
-		list.ResetModifiedFlag()
-		var notContactedList []contact.Contact
-		for _, contact := range list.GetClosest() {
-			if !contactedSet.Has(contact) {
-				notContactedList = append(notContactedList, contact)
-			}
-		}
-
-		j := 0
-		for !list.HasBeenModified() && j < len(notContactedList) {
-			var wg sync.WaitGroup
-			wg.Add(env.Alpha)
-			for i := j; i < env.Alpha+j && i < len(notContactedList); i++ {
-				contact := notContactedList[i]
-				go func() {
-					defer wg.Done()
-					contactedSet.Add(contact)
-					nodes, err := n.Client.SendFindNode(ctx, &contact)
-					if err != nil {
-						return
-					}
-
-					list.AddNodes(nodes, target)
-				}()
-			}
-
-			wg.Wait()
-			j += env.Alpha
-		}
-	}
-
-	return list.GetClosest(), nil
 }
