@@ -83,7 +83,7 @@ func (candidates *ContactCandidates) Less(i, j int) bool {
 
 func (candidates *ContactCandidates) RemoveID(id *kademliaid.KademliaID) {
 	for idx, contact := range candidates.contacts {
-		if contact.ID == id {
+		if contact.ID.Equals(id) {
 			candidates.contacts = append(candidates.contacts[:idx], candidates.contacts[idx+1:]...)
 		}
 	}

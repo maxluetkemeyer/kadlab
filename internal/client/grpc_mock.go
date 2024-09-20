@@ -18,11 +18,11 @@ func (m *mockGrpcClient) Ping(ctx context.Context, in *pb.Node, opts ...grpc.Cal
 	return &pb.Node{ID: &pb.KademliaID{Value: m.id.Bytes()}, IPWithPort: m.address}, nil
 }
 
-func (m *mockGrpcClient) Find_Node(ctx context.Context, in *pb.KademliaID, opts ...grpc.CallOption) (*pb.Nodes, error) {
+func (m *mockGrpcClient) FindNode(ctx context.Context, in *pb.FindNodeRequest, opts ...grpc.CallOption) (*pb.Nodes, error) {
 	panic("TODO")
 }
 
-func (m *mockGrpcClient) Find_Value(ctx context.Context, in *pb.KademliaID, opts ...grpc.CallOption) (*pb.NodesOrData, error) {
+func (m *mockGrpcClient) FindValue(ctx context.Context, in *pb.KademliaID, opts ...grpc.CallOption) (*pb.NodesOrData, error) {
 	panic("TODO")
 }
 
