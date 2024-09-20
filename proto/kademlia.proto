@@ -6,8 +6,8 @@ package proto;
 
 service Kademlia {
     rpc Ping (Node) returns (Node) {}
-    rpc Find_Node (KademliaID) returns (Nodes) {}
-    rpc Find_Value (KademliaID) returns (NodesOrData) {}
+    rpc FindNode (FindNodeRequest) returns (Nodes) {}
+    rpc FindValue (KademliaID) returns (NodesOrData) {}
     rpc Store (Content) returns (StoreResult) {}
 }
 
@@ -22,6 +22,11 @@ message Content {
 
 message KademliaID {
     bytes Value = 1;
+}
+
+message FindNodeRequest {
+    KademliaID Target = 1;
+    KademliaID Sender = 2;
 }
 
 message Node {
