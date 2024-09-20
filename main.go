@@ -33,6 +33,8 @@ func main() {
 	rootCtx, cancelCtx := signal.NotifyContext(context.Background(), syscall.SIGTERM)
 	errGroup, errCtx := errgroup.WithContext(rootCtx)
 
+	// Assumption: this will give unique IDs for the whole network
+	// TODO: Can we generate equally distributed IDs based of IPs?
 	id := kademliaid.NewRandomKademliaID()
 	c := contact.NewContact(id, address)
 

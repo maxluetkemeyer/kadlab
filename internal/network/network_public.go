@@ -6,7 +6,9 @@ import (
 	"net"
 )
 
-func ResolveDNS(ctx context.Context, domain string) ([]string, error) {
+type PublicNetwork struct{}
+
+func (network *PublicNetwork) ResolveDNS(ctx context.Context, domain string) ([]string, error) {
 	// Perform a DNS lookup for the given domain
 	ipAddresses, err := net.LookupIP(domain)
 

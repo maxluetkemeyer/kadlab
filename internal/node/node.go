@@ -18,18 +18,27 @@ type Node struct {
 	Client       network.ClientRPC
 	RoutingTable *routingtable.RoutingTable
 	Store        store.Store
+	kNet		 network.Network
 }
 
-func New(client network.ClientRPC, routingTable *routingtable.RoutingTable, store store.Store) *Node {
+func New(client network.ClientRPC, routingTable *routingtable.RoutingTable, store store.Store, kNet network.Network) *Node {
 	return &Node{
 		Client:       client,
 		RoutingTable: routingTable,
 		Store:        store,
+		kNet:		  kNet,
 	}
 }
 
+/*
+	* A node joins the network as follows:
+      1. if it does not already have a nodeID n, it generates one
+      2.  it inserts the value of some known node c into the appropriate bucket as its first contact
+      3.  it does an iterativeFindNode for n
+      4.  it refreshes all buckets further away than its closest neighbor, which will be in the occupied bucket with the lowest index.
+*/
 func (n *Node) Bootstrap(ctx context.Context) error {
-	addresses, err := network.ResolveDNS(ctx, env.KnownDomain)
+	addresses, err := n.kNet.ResolveDNS(ctx, env.KnownDomain)
 	if err != nil {
 		return err
 	}
@@ -47,7 +56,9 @@ func (n *Node) Bootstrap(ctx context.Context) error {
 	// 	return err
 	// }
 
-	return nil
+	// 4. Automatically done via AddContact()
+
+	panic("unimplemented")
 }
 
 // Put takes content of the file and outputs the hash of the object
@@ -62,9 +73,10 @@ func (n *Node) GetObject() {
 }
 
 // Ping each contact in <contacts> until one responeses and returns it.
-func (n *Node) pingContacts(ctx context.Context, me *contact.Contact, targets []string) (*contact.Contact, error) {
-	for _, target := range targets {
-		contact, err := n.Client.SendPing(ctx, me, target)
+// TODO: add concurrency
+func (n *Node) pingContacts(ctx context.Context, me *contact.Contact, targetIps []string) (*contact.Contact, error) {
+	for _, targetIp := range targetIps {
+		contact, err := n.Client.SendPing(ctx, me, targetIp)
 		if err == nil {
 			return &contact, nil
 		}
