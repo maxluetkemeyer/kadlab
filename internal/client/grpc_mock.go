@@ -18,15 +18,15 @@ func (m *mockGrpcClient) Ping(ctx context.Context, in *pb.Node, opts ...grpc.Cal
 	return &pb.Node{ID: m.id.Bytes(), IPWithPort: m.address}, nil
 }
 
-func (m *mockGrpcClient) FindNode(ctx context.Context, in *pb.FindNodeRequest, opts ...grpc.CallOption) (*pb.Nodes, error) {
+func (m *mockGrpcClient) FindNode(ctx context.Context, in *pb.FindNodeRequest, opts ...grpc.CallOption) (*pb.FindNodeResult, error) {
 	panic("TODO")
 }
 
-func (m *mockGrpcClient) FindValue(ctx context.Context, in *pb.FindValueRequest, opts ...grpc.CallOption) (*pb.NodesOrData, error) {
+func (m *mockGrpcClient) FindValue(ctx context.Context, in *pb.FindValueRequest, opts ...grpc.CallOption) (*pb.FindValueResult, error) {
 	panic("TODO")
 }
 
-func (m *mockGrpcClient) Store(ctx context.Context, in *pb.Content, opts ...grpc.CallOption) (*pb.StoreResult, error) {
+func (m *mockGrpcClient) Store(ctx context.Context, in *pb.StoreRequest, opts ...grpc.CallOption) (*pb.StoreResult, error) {
 	m.store[string(in.Key)] = in.Value
 	return &pb.StoreResult{Success: true}, nil
 }

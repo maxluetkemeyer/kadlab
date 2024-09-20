@@ -91,7 +91,7 @@ func TestServer_FindNode(t *testing.T) {
 		srv := initServer()
 		fillRoutingTable(env.BucketSize*2, srv.routingTable, SenderID)
 
-		if candidates := srv.routingTable.FindClosestContacts(SenderID, nil, 1); candidates[0].ID == SenderID {
+		if candidates := srv.routingTable.FindClosestContacts(SenderID, 1); candidates[0].ID == SenderID {
 			t.Fatalf("sender already exists in routing table")
 		}
 
