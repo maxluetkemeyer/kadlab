@@ -4,6 +4,7 @@ import (
 	"container/list"
 	"context"
 	"fmt"
+	"sync"
 
 	"d7024e_group04/env"
 	"d7024e_group04/internal/kademlia/bucket"
@@ -80,6 +81,7 @@ func (n *Node) findNode(ctx context.Context, target *contact.Contact, k int) ([]
 	list := NewNodeList(k)
 	list.AddNodes(closestContacts, target)
 	for list.HasBeenModified() {
+		list.ResetModifiedFlag()
 		var notContactedList []contact.Contact
 		for _, contact := range list.GetClosest() {
 			if !contactedSet.Has(contact) {
@@ -87,10 +89,14 @@ func (n *Node) findNode(ctx context.Context, target *contact.Contact, k int) ([]
 			}
 		}
 
-		for {
-			for i := 0; i < env.Alpha && i < len(notContactedList); i++ {
+		j := 0
+		for !list.HasBeenModified() && j < len(notContactedList) {
+			var wg sync.WaitGroup
+			wg.Add(env.Alpha)
+			for i := j; i < env.Alpha+j && i < len(notContactedList); i++ {
 				contact := notContactedList[i]
 				go func() {
+					defer wg.Done()
 					contactedSet.Add(contact)
 					nodes, err := n.Client.SendFindNode(ctx, &contact)
 					if err != nil {
@@ -101,11 +107,8 @@ func (n *Node) findNode(ctx context.Context, target *contact.Contact, k int) ([]
 				}()
 			}
 
-			if !list.HasBeenModified() {
-
-			}
-		}
-		for _, contact := range list.GetClosest() {
+			wg.Wait()
+			j += env.Alpha
 		}
 	}
 

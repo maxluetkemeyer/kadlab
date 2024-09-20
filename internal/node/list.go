@@ -61,13 +61,13 @@ func (n *NodeList) GetClosest() []contact.Contact {
 	return n.slice[:]
 }
 
-func (n *NodeList) HasBeenModified() bool {
-	if n.modified {
-		n.modified = false
-		return true
-	}
+func (n *NodeList) ResetModifiedFlag() {
+	n.modified = false
+}
 
-	return false
+
+func (n *NodeList) HasBeenModified() bool {
+	return n.modified
 }
 
 func (n *NodeList) sort() {
