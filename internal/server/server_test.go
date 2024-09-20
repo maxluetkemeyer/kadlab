@@ -2,7 +2,9 @@ package server
 
 import (
 	"context"
+	"d7024e_group04/env"
 	"d7024e_group04/internal/kademlia/contact"
+	"d7024e_group04/internal/kademlia/kademliaid"
 	"d7024e_group04/internal/kademlia/routingtable"
 	"d7024e_group04/internal/store"
 	"fmt"
@@ -10,16 +12,24 @@ import (
 	"testing"
 	"time"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
-
 	pb "d7024e_group04/proto"
 )
 
-func TestServer_Serve(t *testing.T) {
-	routingTable := routingtable.NewRoutingTable(contact.NewContact(TargetID, TargetAddress))
-	server := NewServer(routingTable, store.NewMemoryStore())
+var (
+	ServerID      = kademliaid.NewRandomKademliaID()
+	ServerAddress = ":50051"
 
+	SenderID      = kademliaid.NewRandomKademliaID()
+	SenderAddress = "sender_ip"
+)
+
+func initServer() *Server {
+	routingTable := routingtable.NewRoutingTable(contact.NewContact(ServerID, ServerAddress))
+	return NewServer(routingTable, store.NewMemoryStore())
+}
+
+func TestServer_Serve(t *testing.T) {
+	server := initServer()
 	t.Run("start and stop", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
 		go TimeoutContext(ctx, cancel)
@@ -32,37 +42,29 @@ func TestServer_Serve(t *testing.T) {
 }
 
 func TestServer_Ping(t *testing.T) {
-	InitBufconn()
-
-	conn, err := grpc.NewClient("passthrough://bufnet", grpc.WithContextDialer(BufDialer), grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		t.Fatalf("Failed to dial bufnet: %v", err)
-	}
-	defer conn.Close()
-
-	client := pb.NewKademliaClient(conn)
+	server := initServer()
 
 	t.Run("ping valid node", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 		go TimeoutContext(ctx, cancel)
 
 		sender := &pb.Node{
-			ID:         &pb.KademliaID{Value: ClientID.Bytes()},
-			IPWithPort: ClientAddress,
+			ID:         &pb.KademliaID{Value: SenderID.Bytes()},
+			IPWithPort: SenderAddress,
 		}
 
-		resp, err := client.Ping(ctx, sender)
+		resp, err := server.Ping(ctx, sender)
 
 		if err != nil {
 			t.Error(fmt.Errorf("rpc ping failed: %v", err))
 		}
 
-		if !reflect.DeepEqual(resp.ID.Value, TargetID.Bytes()) {
-			t.Error(fmt.Errorf("wrong id from responding node, got %v wanted %v", resp.ID.Value, TargetID.Bytes()))
+		if !reflect.DeepEqual(resp.ID.Value, ServerID.Bytes()) {
+			t.Error(fmt.Errorf("wrong id from responding node, got %v wanted %v", resp.ID.Value, ServerID.Bytes()))
 		}
 
-		if resp.IPWithPort != TargetAddress {
-			t.Error(fmt.Errorf("wrong address from responding node, got %v wanted %v", resp.IPWithPort, TargetAddress))
+		if resp.IPWithPort != ServerAddress {
+			t.Error(fmt.Errorf("wrong address from responding node, got %v wanted %v", resp.IPWithPort, ServerAddress))
 		}
 	})
 
@@ -72,12 +74,79 @@ func TestServer_Ping(t *testing.T) {
 		go TimeoutContext(ctx, cancel)
 
 		sender := &pb.Node{
-			ID:         &pb.KademliaID{Value: ClientID.Bytes()[:5]},
-			IPWithPort: ClientAddress,
+			ID:         &pb.KademliaID{Value: SenderID.Bytes()[:5]},
+			IPWithPort: SenderAddress,
 		}
 
-		if _, err := client.Ping(ctx, sender); err == nil {
+		if _, err := server.Ping(ctx, sender); err == nil {
 			t.Errorf("ping with invalid node id did not fail")
 		}
 	})
+}
+
+func TestServer_FindNode(t *testing.T) {
+	t.Run("find node", func(t *testing.T) {
+		targetID := kademliaid.NewRandomKademliaID()
+
+		srv := initServer()
+		fillRoutingTable(env.BucketSize*2, srv.routingTable, SenderID)
+
+		if candidates := srv.routingTable.FindClosestContacts(SenderID, nil, 1); candidates[0].ID == SenderID {
+			t.Fatalf("sender already exists in routing table")
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		go TimeoutContext(ctx, cancel)
+
+		resp, err := srv.FindNode(ctx, &pb.FindNodeRequest{Target: &pb.KademliaID{Value: targetID.Bytes()}, Sender: &pb.KademliaID{Value: SenderID.Bytes()}})
+
+		if err != nil {
+			t.Fatalf("rpc FindNode failed, %v", err)
+		}
+
+		nodes := resp.Node
+
+		if len(nodes) <= 0 {
+			t.Fatalf("empty response")
+		}
+
+		if len(nodes) > env.BucketSize {
+			t.Fatalf("returned more nodes than allowed k: %v, got %v", env.BucketSize, len(nodes))
+		}
+
+		for _, node := range nodes {
+			if reflect.DeepEqual(node.ID.Value, ServerID.Bytes()) {
+				t.Fatalf("response included server node")
+			}
+
+			if reflect.DeepEqual(node.ID.Value, SenderID.Bytes()) {
+				t.Fatalf("reponse included sender node")
+			}
+		}
+	})
+}
+
+func fillRoutingTable(count int, routingTable *routingtable.RoutingTable, blacklist *kademliaid.KademliaID) {
+	var kID *kademliaid.KademliaID
+
+	for range count {
+		for {
+			kID = kademliaid.NewRandomKademliaID()
+			if kID != blacklist {
+				break
+			}
+		}
+
+		contact := contact.NewContact(kID, fmt.Sprintf("node %v", count))
+
+		routingTable.AddContact(contact)
+	}
+}
+
+func TimeoutContext(ctx context.Context, cancel context.CancelFunc) {
+	<-ctx.Done()
+	// timeout test, did not shutdown on context cancel
+	time.Sleep(30 * time.Second)
+	cancel()
+	panic("context timed out but test did not finish")
 }
