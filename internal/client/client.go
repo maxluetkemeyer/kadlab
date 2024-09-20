@@ -40,7 +40,14 @@ func initConnection(address string, opts ...grpc.DialOption) (*grpc.ClientConn, 
 }
 
 // SendPingMessage sends an rpc call to the target contact. If a reply is received the bucket is updated with the target contact.
-func (c *Client) SendPing(ctx context.Context, grpc pb.KademliaClient, me *contact.Contact, target string) (contact contact.Contact, err error) {
+func (c *Client) SendPing(ctx context.Context, me *contact.Contact, target string) (*contact.Contact, error) {
+	conn, err := initConnection(target, c.opts...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create connection to address: %v, err: %v", target, err)
+	}
+
+	defer conn.Close()
+
 	grpc := pb.NewKademliaClient(conn)
 
 	payload := &pb.Node{
@@ -51,12 +58,12 @@ func (c *Client) SendPing(ctx context.Context, grpc pb.KademliaClient, me *conta
 	resp, err := grpc.Ping(ctx, payload)
 
 	if err != nil {
-		return contact, fmt.Errorf("failed to ping address %v, err: %v", target, err)
+		return nil, fmt.Errorf("failed to ping address %v, err: %v", target, err)
 	}
 
-	contact = pbNodeToContact(resp)
+	contact := pbNodeToContact(resp)
 
-	return contact, nil
+	return &contact, nil
 }
 
 func (c *Client) SendFindNode(ctx context.Context, target *contact.Contact) ([]contact.Contact, error) {
