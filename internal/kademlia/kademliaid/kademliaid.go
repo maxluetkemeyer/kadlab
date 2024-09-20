@@ -1,9 +1,11 @@
 package kademliaid
 
 import (
-	"d7024e_group04/env"
 	"encoding/hex"
+	"fmt"
 	"math/rand"
+
+	"d7024e_group04/env"
 )
 
 // TODO bad package naming, kademliaid.KademliaID
@@ -43,6 +45,15 @@ func NewRandomKademliaID() *KademliaID {
 		newKademliaID[i] = uint8(rand.Intn(256))
 	}
 	return &newKademliaID
+}
+
+// TODO: test function
+func NewKademliaIDFromBytes(data []byte) (*KademliaID, error) {
+	if (len(data) == env.IDLength) {
+		return (*KademliaID)(data), nil
+	}
+
+	return nil, fmt.Errorf("unable to create a KademliaID from bytes: %v", data)
 }
 
 // Less returns true if kademliaID < otherKademliaID (bitwise)

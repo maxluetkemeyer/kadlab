@@ -19,7 +19,6 @@ var (
 
 func TestClient_Ping(t *testing.T) {
 	client := NewClient()
-	grpcClient := newMockGrpcClient(*serverID, serverAddress)
 
 	clientContact := contact.NewContact(clientID, clientAddress)
 	serverContact := contact.NewContact(serverID, serverAddress)
@@ -28,7 +27,7 @@ func TestClient_Ping(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 		go TimeoutContext(ctx, cancel)
 
-		resp, err := client.SendPing(ctx, grpcClient, &clientContact, &serverContact)
+		resp, err := client.SendPing(ctx, &clientContact, serverContact.Address)
 
 		if err != nil {
 			t.Fatalf("failed to ping, %v", err)
