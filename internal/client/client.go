@@ -91,7 +91,8 @@ func (c *Client) SendFindNode(ctx context.Context, me, target *contact.Contact) 
 	for _, node := range resp.Nodes {
 		id, err := kademliaid.NewKademliaIDFromBytes(node.ID)
 		if err != nil {
-			log.Printf("ERROR: %v\n", err)
+			// TODO: better logging
+			log.Printf("%v\n", err)
 			continue
 		}
 
