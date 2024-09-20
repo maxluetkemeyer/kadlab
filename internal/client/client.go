@@ -41,7 +41,7 @@ func (c *Client) NewConnection(address string, opts ...grpc.DialOption) (*grpc.C
 // SendPingMessage sends an rpc call to the target contact. If a reply is received the bucket is updated with the target contact.
 func (c *Client) SendPing(ctx context.Context, grpc pb.KademliaClient, me, target *contact.Contact) (contact contact.Contact, err error) {
 	payload := &pb.Node{
-		ID:         &pb.KademliaID{Value: me.ID.Bytes()},
+		ID:         me.ID.Bytes(),
 		IPWithPort: me.Address,
 	}
 
@@ -56,12 +56,47 @@ func (c *Client) SendPing(ctx context.Context, grpc pb.KademliaClient, me, targe
 	return contact, nil
 }
 
-func (c *Client) SendFindNode(ctx context.Context, contact *contact.Contact) ([]contact.Contact, error) {
+func (c *Client) SendFindNode(ctx context.Context, contact contact.Contact) ([]contact.Contact, error) {
 	panic("TODO")
 }
 
-func (c *Client) SendFindValue(ctx context.Context, hash string) (string, error) {
-	panic("TODO")
+func (c *Client) SendFindValue(ctx context.Context, me, target contact.Contact, hash string) (candidates *contact.ContactCandidates, data string, err error) {
+	conn, err := c.NewConnection(target.Address)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to create connection to address: %v, err: %v", target.Address, err)
+	}
+
+	defer conn.Close()
+
+	grpc := pb.NewKademliaClient(conn)
+
+	payload := &pb.FindValueRequest{
+		Hash:           kademliaid.NewKademliaID(hash).Bytes(),
+		RequestingNode: &pb.Node{ID: me.ID.Bytes(), IPWithPort: me.Address},
+	}
+
+	resp, err := grpc.FindValue(ctx, payload)
+
+	if err != nil {
+		return nil, "", fmt.Errorf("rpc server returned err: %v", err)
+	}
+
+	switch respValue := resp.Value.(type) {
+	case *pb.FindValueResult_Data:
+		return nil, respValue.Data, nil
+
+	case *pb.FindValueResult_Nodes:
+		contacts := make([]contact.Contact, 0, len(respValue.Nodes.Nodes))
+		for _, node := range respValue.Nodes.Nodes {
+			contacts = append(contacts, pbNodeToContact(node))
+		}
+		candidates.Append(contacts)
+
+		return candidates, "", nil
+
+	default:
+		return nil, "", fmt.Errorf("response type invalid")
+	}
 }
 
 func (c *Client) SendStore(ctx context.Context, data string) error {
@@ -69,5 +104,5 @@ func (c *Client) SendStore(ctx context.Context, data string) error {
 }
 
 func pbNodeToContact(node *pb.Node) contact.Contact {
-	return contact.NewContact((*kademliaid.KademliaID)(node.ID.Value), node.IPWithPort)
+	return contact.NewContact((*kademliaid.KademliaID)(node.ID), node.IPWithPort)
 }

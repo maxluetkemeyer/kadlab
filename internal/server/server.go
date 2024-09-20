@@ -60,33 +60,36 @@ func (s *Server) Start(ctx context.Context) error {
 
 // Ping serves PING rpc calls, saves the senders contact info and replies with it's own contact info
 func (s *Server) Ping(ctx context.Context, sender *pb.Node) (*pb.Node, error) {
-	log.Printf("received ping from\nNode: %v\nAddress: %v\n", hex.EncodeToString(sender.ID.Value), sender.IPWithPort)
+	log.Printf("received ping from\nNode: %v\nAddress: %v\n", hex.EncodeToString(sender.ID), sender.IPWithPort)
 
-	if len(sender.ID.Value) != env.IDLength {
-		return nil, fmt.Errorf("invalid id length %v", len(sender.ID.Value))
+	if len(sender.ID) != env.IDLength {
+		return nil, fmt.Errorf("invalid id length %v", len(sender.ID))
 	}
 
-	c := contact.NewContact((*kademliaid.KademliaID)(sender.ID.Value), sender.IPWithPort)
+	c := contact.NewContact((*kademliaid.KademliaID)(sender.ID), sender.IPWithPort)
 
 	s.routingTable.AddContact(c)
 
 	return &pb.Node{
-		ID:         &pb.KademliaID{Value: s.id.Bytes()},
+		ID:         s.id.Bytes(),
 		IPWithPort: s.address,
 	}, nil
 }
 
-func (s *Server) FindNode(ctx context.Context, request *pb.FindNodeRequest) (*pb.Nodes, error) {
+func (s *Server) FindNode(ctx context.Context, request *pb.FindNodeRequest) (*pb.FindNodeResult, error) {
 	// TODO change to func NewKademliaIDFromBytes
-	targetID := (*kademliaid.KademliaID)(request.Target.Value)
-	senderID := (*kademliaid.KademliaID)(request.Sender.Value)
+	targetID := (*kademliaid.KademliaID)(request.TargetID)
+	senderID := (*kademliaid.KademliaID)(request.RequestingNode.ID)
 	candidates := s.routingTable.FindClosestContacts(targetID, env.BucketSize, senderID)
+
+	senderContact := contact.NewContact(senderID, request.RequestingNode.IPWithPort)
+	s.routingTable.AddContact(senderContact)
 
 	nodes := make([]*pb.Node, 0, len(candidates))
 
 	for _, contact := range candidates {
-		nodes = append(nodes, &pb.Node{ID: &pb.KademliaID{Value: contact.ID.Bytes()}, IPWithPort: contact.Address})
+		nodes = append(nodes, &pb.Node{ID: contact.ID.Bytes(), IPWithPort: contact.Address})
 	}
 
-	return &pb.Nodes{Node: nodes}, nil
+	return &pb.FindNodeResult{Nodes: nodes}, nil
 }

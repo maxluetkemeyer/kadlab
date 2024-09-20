@@ -6,6 +6,7 @@ import (
 )
 
 const IDLength = 20
+const Alpha = 3 // degree of parallelism
 
 var ApiPort = 8080
 var Port = 50051

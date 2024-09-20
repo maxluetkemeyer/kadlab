@@ -49,7 +49,7 @@ func TestServer_Ping(t *testing.T) {
 		go TimeoutContext(ctx, cancel)
 
 		sender := &pb.Node{
-			ID:         &pb.KademliaID{Value: SenderID.Bytes()},
+			ID:         SenderID.Bytes(),
 			IPWithPort: SenderAddress,
 		}
 
@@ -59,8 +59,8 @@ func TestServer_Ping(t *testing.T) {
 			t.Error(fmt.Errorf("rpc ping failed: %v", err))
 		}
 
-		if !reflect.DeepEqual(resp.ID.Value, ServerID.Bytes()) {
-			t.Error(fmt.Errorf("wrong id from responding node, got %v wanted %v", resp.ID.Value, ServerID.Bytes()))
+		if !reflect.DeepEqual(resp.ID, ServerID.Bytes()) {
+			t.Error(fmt.Errorf("wrong id from responding node, got %v wanted %v", resp.ID, ServerID.Bytes()))
 		}
 
 		if resp.IPWithPort != ServerAddress {
@@ -74,7 +74,7 @@ func TestServer_Ping(t *testing.T) {
 		go TimeoutContext(ctx, cancel)
 
 		sender := &pb.Node{
-			ID:         &pb.KademliaID{Value: SenderID.Bytes()[:5]},
+			ID:         SenderID.Bytes()[:5],
 			IPWithPort: SenderAddress,
 		}
 
@@ -98,13 +98,13 @@ func TestServer_FindNode(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 		go TimeoutContext(ctx, cancel)
 
-		resp, err := srv.FindNode(ctx, &pb.FindNodeRequest{Target: &pb.KademliaID{Value: targetID.Bytes()}, Sender: &pb.KademliaID{Value: SenderID.Bytes()}})
+		resp, err := srv.FindNode(ctx, &pb.FindNodeRequest{TargetID: targetID.Bytes(), RequestingNode: &pb.Node{ID: SenderID.Bytes(), IPWithPort: SenderAddress}})
 
 		if err != nil {
 			t.Fatalf("rpc FindNode failed, %v", err)
 		}
 
-		nodes := resp.Node
+		nodes := resp.Nodes
 
 		if len(nodes) <= 0 {
 			t.Fatalf("empty response")
@@ -115,11 +115,11 @@ func TestServer_FindNode(t *testing.T) {
 		}
 
 		for _, node := range nodes {
-			if reflect.DeepEqual(node.ID.Value, ServerID.Bytes()) {
+			if reflect.DeepEqual(node.ID, ServerID.Bytes()) {
 				t.Fatalf("response included server node")
 			}
 
-			if reflect.DeepEqual(node.ID.Value, SenderID.Bytes()) {
+			if reflect.DeepEqual(node.ID, SenderID.Bytes()) {
 				t.Fatalf("reponse included sender node")
 			}
 		}
