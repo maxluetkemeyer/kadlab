@@ -56,23 +56,47 @@ func (c *Client) SendPing(ctx context.Context, grpc pb.KademliaClient, me, targe
 	return contact, nil
 }
 
-func (c *Client) SendFindNode(ctx context.Context, contact *contact.Contact) ([]contact.Contact, error) {
+func (c *Client) SendFindNode(ctx context.Context, contact contact.Contact) ([]contact.Contact, error) {
 	panic("TODO")
 }
 
-func (c *Client) SendFindValue(ctx context.Context, target *contact.Contact, hash string) (contact.ContactCandidates, string, error) {
-	// TODO When an FindValue succeeds, the initiator must store the key/value pair at the closest node seen which did not return the value.
+func (c *Client) SendFindValue(ctx context.Context, me, target contact.Contact, hash string) (candidates *contact.ContactCandidates, data string, err error) {
 	conn, err := c.NewConnection(target.Address)
 	if err != nil {
-		return contact.ContactCandidates{}, "", fmt.Errorf("failed to create connection to address: %v, err: %v", target.Address, err)
+		return nil, "", fmt.Errorf("failed to create connection to address: %v, err: %v", target.Address, err)
 	}
 
 	defer conn.Close()
 
-	// grpc := pb.NewKademliaClient(conn)
+	grpc := pb.NewKademliaClient(conn)
 
-	// payload := &pb.
-	panic("TODO")
+	payload := &pb.FindValueRequest{
+		Hash:     kademliaid.NewKademliaID(hash).Bytes(),
+		SenderID: me.ID.Bytes(),
+	}
+
+	resp, err := grpc.FindValue(ctx, payload)
+
+	if err != nil {
+		return nil, "", fmt.Errorf("rpc server returned err: %v", err)
+	}
+
+	switch value := resp.Value.(type) {
+	case *pb.NodesOrData_Data:
+		return nil, value.Data, nil
+
+	case *pb.NodesOrData_Nodes:
+		contacts := make([]contact.Contact, 0, len(value.Nodes.Node))
+		for _, node := range value.Nodes.Node {
+			contacts = append(contacts, pbNodeToContact(node))
+		}
+		candidates.Append(contacts)
+
+		return candidates, "", nil
+
+	default:
+		return nil, "", fmt.Errorf("response type invalid")
+	}
 }
 
 func (c *Client) SendStore(ctx context.Context, data string) error {
