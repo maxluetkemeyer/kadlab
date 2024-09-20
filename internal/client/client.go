@@ -28,14 +28,14 @@ func NewClient(opts ...grpc.DialOption) *Client {
 
 // initConnection returns a grpc connection and client to the target address
 // It is callers responsibility to close the connection after use to prevent leakage
-func (c *Client) NewConnection(address string, opts ...grpc.DialOption) (pb.KademliaClient, *grpc.ClientConn, error) {
+func (c *Client) NewConnection(address string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
 	opts = append(opts, c.opts...)
 	conn, err := grpc.NewClient(address, opts...)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	return pb.NewKademliaClient(conn), conn, nil
+	return conn, nil
 }
 
 // SendPingMessage sends an rpc call to the target contact. If a reply is received the bucket is updated with the target contact.
