@@ -7,7 +7,7 @@ import (
 )
 
 type ClientRPC interface {
-	SendPing(ctx context.Context, me, target *contact.Contact) (contact.Contact, error)
+	SendPing(ctx context.Context, grpc pb.KademliaClient, me, target *contact.Contact) (contact.Contact, error)
 	SendFindNode(ctx context.Context, contact *contact.Contact) ([]contact.Contact, error)
 	SendFindValue(ctx context.Context, hash string) (string, error)
 	SendStore(ctx context.Context, data string) error
