@@ -3,6 +3,7 @@ package node
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"d7024e_group04/env"
 	"d7024e_group04/internal/kademlia/contact"
@@ -41,6 +42,17 @@ func (n *Node) Bootstrap(ctx context.Context) error {
 		return err
 	}
 
+	ourIP := n.RoutingTable.Me().Address
+
+	for idx, address := range addresses {
+		if address == ourIP[:len(ourIP)-6] {
+			addresses = append(addresses[:idx], addresses[idx+1:]...)
+			break
+		}
+	}
+
+	log.Printf("addresses:%v\n", addresses)
+
 	me := n.RoutingTable.Me()
 	contact, err := n.pingContacts(ctx, &me, addresses)
 	if err != nil {
@@ -53,6 +65,9 @@ func (n *Node) Bootstrap(ctx context.Context) error {
 	for _, contact := range closestContacts {
 		n.RoutingTable.AddContact(contact)
 	}
+
+	log.Println("FOUND NODES")
+	log.Print(closestContacts)
 
 	return nil
 }
@@ -115,7 +130,7 @@ func (n *Node) GetObject(rootCtx context.Context, hash string) (data string, err
 // TODO: add concurrency
 func (n *Node) pingContacts(ctx context.Context, me *contact.Contact, targetIps []string) (*contact.Contact, error) {
 	for _, targetIp := range targetIps {
-		contact, err := n.Client.SendPing(ctx, me, targetIp)
+		contact, err := n.Client.SendPing(ctx, me, targetIp+":50051") // TODO fix this port
 		if err == nil {
 			return contact, nil
 		}

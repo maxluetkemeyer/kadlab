@@ -13,7 +13,7 @@ const RPCTimeout = 5 * time.Second
 var ApiPort = 8080
 var Port = 50051
 var BucketSize = 20
-var KnownDomain = "dockerrb"
+var KnownDomain = "kademlianodes"
 
 func init() {
 	port := os.Getenv("PORT")

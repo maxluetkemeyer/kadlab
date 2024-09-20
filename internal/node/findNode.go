@@ -17,6 +17,7 @@ type kClosestList struct {
 }
 
 func (n *Node) findNode(rootCtx context.Context, target *contact.Contact) []contact.Contact {
+	log.Println("FINDING NODES")
 	alpha := env.Alpha
 	k := env.BucketSize
 	visitedSet := contact.NewContactSet()
@@ -65,8 +66,9 @@ func (n *Node) findNode(rootCtx context.Context, target *contact.Contact) []cont
 
 		wg.Wait()
 		cancel() //TODO maybe move
-
+		log.Printf("ROUTINES DONE")
 		for contacts := range responseContactChannel {
+
 			for _, contact := range contacts {
 				contact.CalcDistance(target.ID)
 
@@ -83,10 +85,15 @@ func (n *Node) findNode(rootCtx context.Context, target *contact.Contact) []cont
 					}
 				}
 			}
+			if len(responseContactChannel) == 0 { // TODO do better
+				break
+			}
 		}
 
 		// can we terminate?
+		log.Printf("updated: %v, is subset: %v", kClosets.updated, kClosets.isSubset(visitedSet))
 		if !kClosets.updated && kClosets.isSubset(visitedSet) {
+			log.Printf("DONE")
 			return kClosets.list
 		}
 	}

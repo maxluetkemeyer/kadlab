@@ -5,10 +5,12 @@ package main
 import (
 	"context"
 	"log"
+	"net"
 	"os"
 	"os/signal"
 	"strconv"
 	"syscall"
+	"time"
 
 	"d7024e_group04/api"
 	"d7024e_group04/cli"
@@ -31,7 +33,13 @@ func main() {
 		log.Fatal(err.Error())
 	}
 
-	address := host + ":" + strconv.Itoa(env.Port)
+	ip, err := net.LookupIP(host)
+	if err != nil {
+		panic("bad ip")
+	}
+
+	address := ip[0].String() + ":" + strconv.Itoa(env.Port)
+
 	rootCtx, cancelCtx := signal.NotifyContext(context.Background(), syscall.SIGTERM)
 	errGroup, errCtx := errgroup.WithContext(rootCtx)
 
@@ -48,13 +56,19 @@ func main() {
 
 	node := node.New(client, routingTable, memoryStore, &network.PublicNetwork{})
 
+	log.Println("STARTING SERVER")
+
 	server := server.NewServer(routingTable, memoryStore)
 	errGroup.Go(func() error {
 		return server.Start(errCtx)
 	})
 
+	log.Println("STARTING BOOTSTRAP")
 	errGroup.Go(func() error {
-		node.Bootstrap(errCtx)
+		time.Sleep(5 * time.Second)
+
+		err := node.Bootstrap(errCtx)
+		log.Printf("bootstrap err: %v\n", err)
 		return err
 	})
 
@@ -62,12 +76,15 @@ func main() {
 		log.Fatalf("bootstrap failed, %v", err)
 	}
 
+	log.Println("STARTING API")
 
 	// REST API
 	handler := api.NewHandler(node)
 	errGroup.Go(func() error {
 		return handler.ListenAndServe(errCtx)
 	})
+
+	log.Println("STARTING CLI")
 
 	// CLI loop
 	errGroup.Go(func() error {

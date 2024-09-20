@@ -78,7 +78,7 @@ func (c *Client) SendFindNode(ctx context.Context, me, target *contact.Contact) 
 	grpc := pb.NewKademliaClient(conn)
 
 	payload := &pb.FindNodeRequest{
-		TargetID: target.ID.Bytes(),
+		TargetID:       target.ID.Bytes(),
 		RequestingNode: &pb.Node{ID: me.ID.Bytes(), IPWithPort: me.Address},
 	}
 
