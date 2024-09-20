@@ -56,13 +56,13 @@ func (c *Client) SendPing(ctx context.Context, me *contact.Contact, target strin
 		IPWithPort: me.Address,
 	}
 
-	resp, err := grpc.Ping(ctx, payload)
+	responseNode, err := grpc.Ping(ctx, payload)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to ping address %v, err: %v", target, err)
 	}
 
-	contact := pbNodeToContact(resp)
+	contact := pbNodeToContact(responseNode)
 
 	return &contact, nil
 }
