@@ -13,7 +13,7 @@ func (s *Server) Store(ctx context.Context, content *pb.Content) (*pb.StoreResul
 	key := content.Key
 	value := content.Value
 
-	s.store.SetValue(key.String(), value)
+	s.store.SetValue(string(key), value)
 
 	return &pb.StoreResult{
 		Success: true,

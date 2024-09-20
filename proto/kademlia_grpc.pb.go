@@ -31,7 +31,7 @@ const (
 type KademliaClient interface {
 	Ping(ctx context.Context, in *Node, opts ...grpc.CallOption) (*Node, error)
 	FindNode(ctx context.Context, in *FindNodeRequest, opts ...grpc.CallOption) (*Nodes, error)
-	FindValue(ctx context.Context, in *KademliaID, opts ...grpc.CallOption) (*NodesOrData, error)
+	FindValue(ctx context.Context, in *FindValueRequest, opts ...grpc.CallOption) (*NodesOrData, error)
 	Store(ctx context.Context, in *Content, opts ...grpc.CallOption) (*StoreResult, error)
 }
 
@@ -63,7 +63,7 @@ func (c *kademliaClient) FindNode(ctx context.Context, in *FindNodeRequest, opts
 	return out, nil
 }
 
-func (c *kademliaClient) FindValue(ctx context.Context, in *KademliaID, opts ...grpc.CallOption) (*NodesOrData, error) {
+func (c *kademliaClient) FindValue(ctx context.Context, in *FindValueRequest, opts ...grpc.CallOption) (*NodesOrData, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(NodesOrData)
 	err := c.cc.Invoke(ctx, Kademlia_FindValue_FullMethodName, in, out, cOpts...)
@@ -89,7 +89,7 @@ func (c *kademliaClient) Store(ctx context.Context, in *Content, opts ...grpc.Ca
 type KademliaServer interface {
 	Ping(context.Context, *Node) (*Node, error)
 	FindNode(context.Context, *FindNodeRequest) (*Nodes, error)
-	FindValue(context.Context, *KademliaID) (*NodesOrData, error)
+	FindValue(context.Context, *FindValueRequest) (*NodesOrData, error)
 	Store(context.Context, *Content) (*StoreResult, error)
 	mustEmbedUnimplementedKademliaServer()
 }
@@ -107,7 +107,7 @@ func (UnimplementedKademliaServer) Ping(context.Context, *Node) (*Node, error) {
 func (UnimplementedKademliaServer) FindNode(context.Context, *FindNodeRequest) (*Nodes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindNode not implemented")
 }
-func (UnimplementedKademliaServer) FindValue(context.Context, *KademliaID) (*NodesOrData, error) {
+func (UnimplementedKademliaServer) FindValue(context.Context, *FindValueRequest) (*NodesOrData, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindValue not implemented")
 }
 func (UnimplementedKademliaServer) Store(context.Context, *Content) (*StoreResult, error) {
@@ -171,7 +171,7 @@ func _Kademlia_FindNode_Handler(srv interface{}, ctx context.Context, dec func(i
 }
 
 func _Kademlia_FindValue_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(KademliaID)
+	in := new(FindValueRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -183,7 +183,7 @@ func _Kademlia_FindValue_Handler(srv interface{}, ctx context.Context, dec func(
 		FullMethod: Kademlia_FindValue_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KademliaServer).FindValue(ctx, req.(*KademliaID))
+		return srv.(KademliaServer).FindValue(ctx, req.(*FindValueRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

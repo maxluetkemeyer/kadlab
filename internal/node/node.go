@@ -33,5 +33,5 @@ func (n *Node) GetObject(ctx context.Context, hash string) (string, error) {
 		return value, nil
 	}
 
-	return n.Client.SendFindValue(ctx, hash)
+	panic("TODO")
 }

@@ -7,8 +7,8 @@ import (
 )
 
 // TODO: Input Validation, Tests, Error handling in string, getvalue, ...
-func (s *Server) FindValue(ctx context.Context, kademliaID *pb.KademliaID) (*pb.NodesOrData, error) {
-	key := string(kademliaID.Value)
+func (s *Server) FindValue(ctx context.Context, request *pb.FindValueRequest) (*pb.NodesOrData, error) {
+	key := string(request.Hash)
 
 	value, err := s.store.GetValue(key)
 
@@ -20,12 +20,12 @@ func (s *Server) FindValue(ctx context.Context, kademliaID *pb.KademliaID) (*pb.
 		}, nil
 	}
 
-	request := &pb.FindNodeRequest{
-		Target: kademliaID,
-		Sender: &pb.KademliaID{Value: s.id.Bytes()},
+	payload := &pb.FindNodeRequest{
+		TargetID: request.Hash,
+		SenderID: s.id.Bytes(),
 	}
 
-	nodes, errFindNodes := s.FindNode(ctx, request)
+	nodes, errFindNodes := s.FindNode(ctx, payload)
 
 	if errFindNodes != nil {
 		err = fmt.Errorf("find Node error in Find value with error: %s", errFindNodes)

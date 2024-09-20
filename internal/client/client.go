@@ -41,7 +41,7 @@ func (c *Client) NewConnection(address string, opts ...grpc.DialOption) (*grpc.C
 // SendPingMessage sends an rpc call to the target contact. If a reply is received the bucket is updated with the target contact.
 func (c *Client) SendPing(ctx context.Context, grpc pb.KademliaClient, me, target *contact.Contact) (contact contact.Contact, err error) {
 	payload := &pb.Node{
-		ID:         &pb.KademliaID{Value: me.ID.Bytes()},
+		ID:         me.ID.Bytes(),
 		IPWithPort: me.Address,
 	}
 
@@ -60,7 +60,18 @@ func (c *Client) SendFindNode(ctx context.Context, contact *contact.Contact) ([]
 	panic("TODO")
 }
 
-func (c *Client) SendFindValue(ctx context.Context, hash string) (string, error) {
+func (c *Client) SendFindValue(ctx context.Context, target *contact.Contact, hash string) (contact.ContactCandidates, string, error) {
+	// TODO When an FindValue succeeds, the initiator must store the key/value pair at the closest node seen which did not return the value.
+	conn, err := c.NewConnection(target.Address)
+	if err != nil {
+		return contact.ContactCandidates{}, "", fmt.Errorf("failed to create connection to address: %v, err: %v", target.Address, err)
+	}
+
+	defer conn.Close()
+
+	// grpc := pb.NewKademliaClient(conn)
+
+	// payload := &pb.
 	panic("TODO")
 }
 
@@ -69,5 +80,5 @@ func (c *Client) SendStore(ctx context.Context, data string) error {
 }
 
 func pbNodeToContact(node *pb.Node) contact.Contact {
-	return contact.NewContact((*kademliaid.KademliaID)(node.ID.Value), node.IPWithPort)
+	return contact.NewContact((*kademliaid.KademliaID)(node.ID), node.IPWithPort)
 }
