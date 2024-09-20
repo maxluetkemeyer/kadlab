@@ -3,7 +3,6 @@ package node
 import (
 	"context"
 	"fmt"
-	"log"
 
 	"d7024e_group04/env"
 	"d7024e_group04/internal/kademlia/contact"

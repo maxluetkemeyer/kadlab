@@ -8,7 +8,7 @@ import (
 
 type ClientRPC interface {
 	SendPing(ctx context.Context, me *contact.Contact, target string) (contact.Contact, error)
-	SendFindNode(ctx context.Context, contact *contact.Contact) ([]contact.Contact, error)
+	SendFindNode(ctx context.Context, target *contact.Contact) (contact.ContactCandidates, error)
 	SendFindValue(ctx context.Context, hash string) (string, error)
 	SendStore(ctx context.Context, data string) error
 }
