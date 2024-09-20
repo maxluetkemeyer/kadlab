@@ -26,9 +26,10 @@ func NewClient(opts ...grpc.DialOption) *Client {
 	}
 }
 
-// initConnection returns a grpc connection to the target address
+// initConnection returns a grpc connection and client to the target address
 // It is callers responsibility to close the connection after use to prevent leakage
-func initConnection(address string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+func (c *Client) NewConnection(address string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+	opts = append(opts, c.opts...)
 	conn, err := grpc.NewClient(address, opts...)
 	if err != nil {
 		return nil, err
@@ -38,16 +39,7 @@ func initConnection(address string, opts ...grpc.DialOption) (*grpc.ClientConn, 
 }
 
 // SendPingMessage sends an rpc call to the target contact. If a reply is received the bucket is updated with the target contact.
-func (c *Client) SendPing(ctx context.Context, me, target *contact.Contact) (contact contact.Contact, err error) {
-	conn, err := initConnection(target.Address, c.opts...)
-	if err != nil {
-		return contact, fmt.Errorf("failed to create connection address: %v, err: %v", target.Address, err)
-	}
-
-	defer conn.Close()
-
-	grpc := pb.NewKademliaClient(conn)
-
+func (c *Client) SendPing(ctx context.Context, grpc pb.KademliaClient, me, target *contact.Contact) (contact contact.Contact, err error) {
 	payload := &pb.Node{
 		ID:         &pb.KademliaID{Value: me.ID.Bytes()},
 		IPWithPort: me.Address,
