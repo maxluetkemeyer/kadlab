@@ -44,6 +44,11 @@ func main() {
 
 	node := node.New(client, routingTable, memoryStore)
 
+	server := server.NewServer(routingTable, memoryStore)
+	errGroup.Go(func() error {
+		return server.Start(errCtx)
+	})
+
 	errGroup.Go(func() error {
 		// TODO node bootstrap stuff
 		return err
@@ -53,10 +58,6 @@ func main() {
 		log.Fatalf("bootstrap failed, %v", err)
 	}
 
-	server := server.NewServer(routingTable, memoryStore)
-	errGroup.Go(func() error {
-		return server.Start(errCtx)
-	})
 
 	// REST API
 	handler := api.NewHandler(node)
