@@ -87,7 +87,7 @@ func (c *Client) SendFindNode(ctx context.Context, me, target *contact.Contact) 
 		return nil, fmt.Errorf("failed to send FIND_NODE RPC to address: %v, err: %v", target.Address, err)
 	}
 
-	var contacts []contact.Contact
+	contacts := make([]contact.Contact, 0, len(resp.Nodes))
 	for _, node := range resp.Nodes {
 		id, err := kademliaid.NewKademliaIDFromBytes(node.ID)
 		if err != nil {
