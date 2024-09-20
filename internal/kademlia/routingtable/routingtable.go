@@ -78,7 +78,9 @@ func (routingTable *RoutingTable) FindClosestContacts(target, blacklisted *kadem
 	}
 
 	// make sure blacklisted id is not in list
-	candidates.RemoveID(blacklisted)
+	if blacklisted != nil {
+		candidates.RemoveID(blacklisted)
+	}
 
 	// If we have to much in our candidates, the get contacts function returns the right amount
 	return candidates.GetContacts(count)
