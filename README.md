@@ -1,9 +1,9 @@
 # Sprint 1
 
 ```bash
-docker build . -t kadlab
-docker compose up -d
-docker exec kadlab-kademliaNodes-1 ping kadlab-kademliaNodes-2
+docker compose up -d --build
+docker compose logs --follow
+docker compose down
 ```
 
 ## Some tips
