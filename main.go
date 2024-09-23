@@ -63,13 +63,17 @@ func main() {
 		return server.Start(errCtx)
 	})
 
-	log.Println("STARTING BOOTSTRAP")
+	log.Println("STARTING BOOTSTRAP in 5 seconds")
 	errGroup.Go(func() error {
 		time.Sleep(5 * time.Second)
 
 		err := node.Bootstrap(errCtx)
-		log.Printf("bootstrap err: %v\n", err)
-		return err
+		if err != nil {
+			log.Printf("bootstrap err: %v\n", err)
+			return err
+		}
+
+		return nil
 	})
 
 	if err = errGroup.Wait(); err != nil {
