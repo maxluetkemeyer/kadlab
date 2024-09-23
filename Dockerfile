@@ -1,6 +1,6 @@
 FROM golang:alpine
 
-RUN go install github.com/vadimi/grpc-client-cli/cmd/grpc-client-cli@latest 
+RUN go install github.com/vadimi/grpc-client-cli/cmd/grpc-client-cli@latest
 
 WORKDIR /kademlia
 
