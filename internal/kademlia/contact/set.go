@@ -76,11 +76,6 @@ func (s *ContactSet) Has(item Contact) bool {
 	return ok
 }
 
-func (s *ContactSet) GetClosests(n int) []Contact {
-
-	panic("unim")
-}
-
 // Len returns the number of contacts in the set.
 func (s *ContactSet) Len() int {
 	return len(s.List())
