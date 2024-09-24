@@ -126,8 +126,8 @@ func TestServer_FindNode(t *testing.T) {
 	})
 }
 
-func fillRoutingTable(count int, routingTable *routingtable.RoutingTable, blacklist *kademliaid.KademliaID) {
-	var kID *kademliaid.KademliaID
+func fillRoutingTable(count int, routingTable *routingtable.RoutingTable, blacklist kademliaid.KademliaID) {
+	var kID kademliaid.KademliaID
 
 	for range count {
 		for {
@@ -137,7 +137,7 @@ func fillRoutingTable(count int, routingTable *routingtable.RoutingTable, blackl
 			}
 		}
 
-		contact := contact.NewContact(kID, fmt.Sprintf("node %v", count))
+		contact := *contact.NewContact(kID, fmt.Sprintf("node %v", count))
 
 		routingTable.AddContact(contact)
 	}

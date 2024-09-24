@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-const IDLength = 20
+const IDLength = 20 // The static number of bytes in a KademliaID. 160 / 8 = 20
 
 var ApiPort = 8080
 var Port = 50051

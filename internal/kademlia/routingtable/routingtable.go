@@ -14,12 +14,12 @@ import (
 // 160 buckets with the current IDLength
 type RoutingTable struct {
 	mut     sync.RWMutex
-	me      contact.Contact
+	me      *contact.Contact
 	buckets [env.IDLength * 8]*bucket.Bucket
 }
 
 // NewRoutingTable returns a new instance of a RoutingTable
-func NewRoutingTable(me contact.Contact) *RoutingTable {
+func NewRoutingTable(me *contact.Contact) *RoutingTable {
 	// ignore err for now, we set this in runtime
 
 	routingTable := &RoutingTable{}
@@ -41,7 +41,7 @@ func (routingTable *RoutingTable) AddContact(contact contact.Contact) {
 }
 
 // FindClosestContacts finds the 'count' closest Contacts to the target in the RoutingTable
-func (routingTable *RoutingTable) FindClosestContacts(target *kademliaid.KademliaID, count int, blacklist ...*kademliaid.KademliaID) []contact.Contact {
+func (routingTable *RoutingTable) FindClosestContacts(target kademliaid.KademliaID, count int, blacklist ...kademliaid.KademliaID) []contact.Contact {
 	candidates := make([]contact.Contact, 0)
 	// Find in which bucket the target should be
 	routingTable.mut.RLock()
@@ -86,7 +86,7 @@ func (routingTable *RoutingTable) FindClosestContacts(target *kademliaid.Kademli
 }
 
 // getBucketIndex get the correct Bucket index for the KademliaID
-func (routingTable *RoutingTable) getBucketIndex(id *kademliaid.KademliaID) int {
+func (routingTable *RoutingTable) getBucketIndex(id kademliaid.KademliaID) int {
 	// distance to ourselves
 	distance := id.CalcDistance(routingTable.me.ID)
 
@@ -106,7 +106,7 @@ func (routingTable *RoutingTable) getBucketIndex(id *kademliaid.KademliaID) int 
 	return env.IDLength*8 - 1
 }
 
-func (routingTable *RoutingTable) Me() contact.Contact {
+func (routingTable *RoutingTable) Me() *contact.Contact {
 	routingTable.mut.RLock()
 	defer routingTable.mut.RUnlock()
 	return routingTable.me

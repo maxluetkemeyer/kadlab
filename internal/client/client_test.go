@@ -27,7 +27,7 @@ func TestClient_Ping(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 		go TimeoutContext(ctx, cancel)
 
-		resp, err := client.SendPing(ctx, &clientContact, serverContact.Address)
+		resp, err := client.SendPing(ctx, clientContact, serverContact.Address)
 
 		if err != nil {
 			t.Fatalf("failed to ping, %v", err)

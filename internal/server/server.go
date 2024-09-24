@@ -19,7 +19,7 @@ import (
 // Server represents the node grpc server
 type Server struct {
 	pb.UnimplementedKademliaServer
-	id           *kademliaid.KademliaID
+	id           kademliaid.KademliaID
 	address      string
 	routingTable *routingtable.RoutingTable
 	store        store.Store
@@ -66,7 +66,7 @@ func (s *Server) Ping(ctx context.Context, sender *pb.Node) (*pb.Node, error) {
 		return nil, fmt.Errorf("invalid id length %v", len(sender.ID))
 	}
 
-	c := contact.NewContact((*kademliaid.KademliaID)(sender.ID), sender.IPWithPort)
+	c := *contact.NewContact((kademliaid.KademliaID)(sender.ID), sender.IPWithPort)
 
 	s.routingTable.AddContact(c)
 
@@ -78,11 +78,11 @@ func (s *Server) Ping(ctx context.Context, sender *pb.Node) (*pb.Node, error) {
 
 func (s *Server) FindNode(ctx context.Context, request *pb.FindNodeRequest) (*pb.FindNodeResult, error) {
 	// TODO change to func NewKademliaIDFromBytes
-	targetID := (*kademliaid.KademliaID)(request.TargetID)
-	senderID := (*kademliaid.KademliaID)(request.RequestingNode.ID)
+	targetID := (kademliaid.KademliaID)(request.TargetID)
+	senderID := (kademliaid.KademliaID)(request.RequestingNode.ID)
 	candidates := s.routingTable.FindClosestContacts(targetID, env.BucketSize, senderID)
 
-	senderContact := contact.NewContact(senderID, request.RequestingNode.IPWithPort)
+	senderContact := *contact.NewContact(senderID, request.RequestingNode.IPWithPort)
 	s.routingTable.AddContact(senderContact)
 
 	nodes := make([]*pb.Node, 0, len(candidates))

@@ -2,12 +2,12 @@ package client
 
 import (
 	"context"
-	"fmt"
-	"log"
-
+	"d7024e_group04/env"
 	"d7024e_group04/internal/kademlia/contact"
 	"d7024e_group04/internal/kademlia/kademliaid"
 	pb "d7024e_group04/proto"
+	"fmt"
+	"log"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -89,14 +89,13 @@ func (c *Client) SendFindNode(ctx context.Context, me, target *contact.Contact) 
 
 	contacts := make([]contact.Contact, 0, len(resp.Nodes))
 	for _, node := range resp.Nodes {
-		id, err := kademliaid.NewKademliaIDFromBytes(node.ID)
-		if err != nil {
-			// TODO: better logging
+		if len(node.ID) != env.IDLength {
 			log.Printf("%v\n", err)
 			continue
 		}
+		id := kademliaid.NewKademliaIDFromBytes([env.IDLength]byte(node.ID))
 
-		newContact := contact.NewContact(id, node.IPWithPort)
+		newContact := *contact.NewContact(id, node.IPWithPort)
 		contacts = append(contacts, newContact)
 	}
 
@@ -146,5 +145,5 @@ func (c *Client) SendStore(ctx context.Context, data string) error {
 }
 
 func pbNodeToContact(node *pb.Node) contact.Contact {
-	return contact.NewContact((*kademliaid.KademliaID)(node.ID), node.IPWithPort)
+	return *contact.NewContact((kademliaid.KademliaID)(node.ID), node.IPWithPort)
 }
