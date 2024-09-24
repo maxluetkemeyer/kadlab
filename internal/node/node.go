@@ -37,7 +37,7 @@ func New(client network.ClientRPC, routingTable *routingtable.RoutingTable, stor
  4. it refreshes all buckets further away than its closest neighbor, which will be in the occupied bucket with the lowest index.
 */
 func (n *Node) Bootstrap(ctx context.Context) error {
-	addresses, err := n.kNet.ResolveDNS(ctx, env.NodesProxyDomain)
+	addresses, err := n.kNet.ResolveDNS(env.NodesProxyDomain)
 	if err != nil {
 		return err
 	}
