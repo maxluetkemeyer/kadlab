@@ -81,7 +81,7 @@ func (routingTable *RoutingTable) FindClosestContacts(target kademliaid.Kademlia
 		candidates = contact.RemoveID(candidates, node)
 	}
 
-	// If we have to much in our candidates, the get contacts function returns the right amount
+	// If we have too much in our candidates, the get contacts function returns the right amount
 	return candidates[:count]
 }
 

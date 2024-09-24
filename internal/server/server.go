@@ -58,7 +58,7 @@ func (s *Server) Start(ctx context.Context) error {
 	return nil
 }
 
-// Ping serves PING rpc calls, saves the senders contact info and replies with it's own contact info
+// Ping serves PING rpc calls, saves the senders contact info and replies with its own contact info
 func (s *Server) Ping(ctx context.Context, sender *pb.Node) (*pb.Node, error) {
 	log.Printf("received ping from\nNode: %v\nAddress: %v\n", hex.EncodeToString(sender.ID), sender.IPWithPort)
 

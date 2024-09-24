@@ -12,6 +12,7 @@ import (
 // that is included as an example.
 
 func TestRoutingTable(t *testing.T) {
+	//TODO: CHANGEME
 	os.Setenv("BUCKET_SIZE", "20")
 
 	rt := NewRoutingTable(contact.NewContact(kademliaid.NewKademliaID("FFFFFFFF00000000000000000000000000000000"), "localhost:8000"))

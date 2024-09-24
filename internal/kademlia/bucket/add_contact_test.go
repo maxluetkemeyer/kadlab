@@ -64,7 +64,7 @@ func TestAddContact(t *testing.T) {
 		})
 	}
 
-	// Dont delete, this tests AddContact, the other ones test AddContactCustom
+	// Don't delete, this tests AddContact, the other ones test AddContactCustom
 	t.Run("Bucket length should have increased after insertion a new unknown contact", func(t *testing.T) {
 		bucket := NewBucket(20)
 		contact0 := *contact.NewContact(kademliaid.NewRandomKademliaID(), "")

@@ -50,7 +50,7 @@ func TestClient_Ping(t *testing.T) {
 
 func TimeoutContext(ctx context.Context, cancel context.CancelFunc) {
 	<-ctx.Done()
-	// timeout test, did not shutdown on context cancel
+	// timeout test, did not shut down on context cancel
 	time.Sleep(30 * time.Second)
 	cancel()
 	panic("context timed out but test did not finish")
