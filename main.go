@@ -41,9 +41,6 @@ func main() {
 	startCLI(errGroup, errCtx, cancelCtx, node)
 	startBootstrapping(errGroup, errCtx, node)
 
-	//TODO: Is that what we want:
-	// Wait blocks until all function calls from the Go method have returned,
-	// then returns the first non-nil error (if any) from them.
 	err := errGroup.Wait()
 	cancelCtx()
 	log.Printf("Node shutdown, reason: %v", err)
