@@ -60,17 +60,6 @@ func (kademliaID KademliaID) Equals(otherKademliaID KademliaID) bool {
 	return true
 }
 
-// CalcDistance returns a new instance of a KademliaID that is built
-// through a bitwise XOR operation between kademliaID and target
-func (kademliaID KademliaID) CalcDistance(target KademliaID) KademliaID {
-	result := KademliaID{}
-	for i := 0; i < env.IDLength; i++ {
-		// bitwise XOR
-		result[i] = kademliaID[i] ^ target[i]
-	}
-	return result
-}
-
 // String returns a simple hex string representation of a KademliaID
 func (kademliaID KademliaID) String() string {
 	return hex.EncodeToString(kademliaID.Bytes())
