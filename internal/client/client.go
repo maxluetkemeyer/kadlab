@@ -103,7 +103,7 @@ func (c *Client) SendFindNode(ctx context.Context, me, target *contact.Contact) 
 	return contacts, nil
 }
 
-func (c *Client) SendFindValue(ctx context.Context, me, target contact.Contact, hash string) (candidates *contact.ContactCandidates, data string, err error) {
+func (c *Client) SendFindValue(ctx context.Context, me, target contact.Contact, hash string) (candidates []contact.Contact, data string, err error) {
 	conn, err := c.NewConnection(target.Address)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to create connection to address: %v, err: %v", target.Address, err)
@@ -129,11 +129,10 @@ func (c *Client) SendFindValue(ctx context.Context, me, target contact.Contact, 
 		return nil, respValue.Data, nil
 
 	case *pb.FindValueResult_Nodes:
-		contacts := make([]contact.Contact, 0, len(respValue.Nodes.Nodes))
+		candidates := make([]contact.Contact, 0, len(respValue.Nodes.Nodes))
 		for _, node := range respValue.Nodes.Nodes {
-			contacts = append(contacts, pbNodeToContact(node))
+			candidates = append(candidates, pbNodeToContact(node))
 		}
-		candidates.Append(contacts)
 
 		return candidates, "", nil
 

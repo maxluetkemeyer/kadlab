@@ -42,48 +42,47 @@ func (routingTable *RoutingTable) AddContact(contact contact.Contact) {
 
 // FindClosestContacts finds the 'count' closest Contacts to the target in the RoutingTable
 func (routingTable *RoutingTable) FindClosestContacts(target *kademliaid.KademliaID, count int, blacklist ...*kademliaid.KademliaID) []contact.Contact {
-	// TODO: It is a slice of contacts
-	var candidates contact.ContactCandidates
+	candidates := make([]contact.Contact, 0)
 	// Find in which bucket the target should be
 	routingTable.mut.RLock()
 	bucketIndex := routingTable.getBucketIndex(target)
 	bucket := routingTable.buckets[bucketIndex]
 
 	// Get all contacts in the bucket with already calculated distances
-	candidates.Append(bucket.GetContactAndCalcDistance(target))
+	candidates = append(candidates, bucket.GetContactAndCalcDistance(target)...)
 
 	// TODO: Put condition in extra function
 	// If we do not have enough candidates, we check the two nearest buckets and so on and so on
-	for i := 1; (bucketIndex-i >= 0 || bucketIndex+i < env.IDLength*8) && candidates.Len() < count; i++ {
+	for i := 1; (bucketIndex-i >= 0 || bucketIndex+i < env.IDLength*8) && len(candidates) < count; i++ {
 		// TODO: Can we follow DRY principle? dont repeat yourself
 		// Add candidates of the smaller nearest bucket
 		if bucketIndex-i >= 0 {
 			bucket = routingTable.buckets[bucketIndex-i]
-			candidates.Append(bucket.GetContactAndCalcDistance(target))
+			candidates = append(candidates, bucket.GetContactAndCalcDistance(target)...)
 		}
 		// Add candidates of the bigger nearest bucket
 		if bucketIndex+i < env.IDLength*8 {
 			bucket = routingTable.buckets[bucketIndex+i]
-			candidates.Append(bucket.GetContactAndCalcDistance(target))
+			candidates = append(candidates, bucket.GetContactAndCalcDistance(target)...)
 		}
 	}
 
 	routingTable.mut.RUnlock()
 
-	candidates.Sort()
+	contact.SortContacts(&candidates)
 
 	// Maybe we have too little
-	if count > candidates.Len() {
-		count = candidates.Len()
+	if count > len(candidates) {
+		count = len(candidates)
 	}
 
 	// make sure blacklisted id is not in list
 	for _, node := range blacklist {
-		candidates.RemoveID(node)
+		candidates = contact.RemoveID(candidates, node)
 	}
 
 	// If we have to much in our candidates, the get contacts function returns the right amount
-	return candidates.GetContacts(count)
+	return candidates[:count]
 }
 
 // getBucketIndex get the correct Bucket index for the KademliaID

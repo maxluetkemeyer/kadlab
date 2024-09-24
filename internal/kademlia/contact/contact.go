@@ -3,7 +3,7 @@ package contact
 import (
 	"d7024e_group04/internal/kademlia/kademliaid"
 	"fmt"
-	"sort"
+	"slices"
 )
 
 // Contact definition
@@ -41,50 +41,21 @@ func (contact *Contact) String() string {
 	return fmt.Sprintf(`contact("%s", "%s")`, contact.ID, contact.Address)
 }
 
-// ContactCandidates definition
-// stores a slice of Contacts
-// TODO: Don't know why they implemented that, we can just use a slice of contacts
-type ContactCandidates struct {
-	contacts []Contact
+func SortContacts(contacts *[]Contact) {
+	slices.SortStableFunc(*contacts, func(a, b Contact) int {
+		if a.Less(&b) {
+			return -1
+		} else {
+			return 1
+		}
+	})
 }
 
-// Append a slice of Contacts to the ContactCandidates
-func (candidates *ContactCandidates) Append(contacts []Contact) {
-	candidates.contacts = append(candidates.contacts, contacts...)
-}
-
-// GetContacts returns the first 'count' number of Contacts
-func (candidates *ContactCandidates) GetContacts(count int) []Contact {
-	return candidates.contacts[:count]
-}
-
-// Sort the Contacts in ContactCandidates
-// TODO: Maybe use slices.sortfunc
-func (candidates *ContactCandidates) Sort() {
-	sort.Sort(candidates)
-}
-
-// Len returns the length of the ContactCandidates
-func (candidates *ContactCandidates) Len() int {
-	return len(candidates.contacts)
-}
-
-// Swap the position of the Contacts at i and j
-// TODO: WARNING does not check if either i or j is within range
-func (candidates *ContactCandidates) Swap(i, j int) {
-	candidates.contacts[i], candidates.contacts[j] = candidates.contacts[j], candidates.contacts[i]
-}
-
-// Less returns true if the Contact at index i is smaller than
-// the Contact at index j
-func (candidates *ContactCandidates) Less(i, j int) bool {
-	return candidates.contacts[i].Less(&candidates.contacts[j])
-}
-
-func (candidates *ContactCandidates) RemoveID(id *kademliaid.KademliaID) {
-	for idx, contact := range candidates.contacts {
+func RemoveID(contacts []Contact, id *kademliaid.KademliaID) (contactsWithoutId []Contact) {
+	for idx, contact := range contacts {
 		if contact.ID.Equals(id) {
-			candidates.contacts = append(candidates.contacts[:idx], candidates.contacts[idx+1:]...)
+			return append(contacts[:idx], contacts[idx+1:]...)
 		}
 	}
+	return contacts
 }
