@@ -26,7 +26,7 @@ func (n *Node) findNode(rootCtx context.Context, target *contact.Contact) []cont
 
 	wg := new(sync.WaitGroup)
 
-	responseContactChannel := make(chan []contact.Contact, k*alpha) // TODO look at size
+	var responseContactChannel chan []contact.Contact
 
 	kClosets.list = n.RoutingTable.FindClosestContacts(target.ID, k)
 
@@ -45,6 +45,7 @@ func (n *Node) findNode(rootCtx context.Context, target *contact.Contact) []cont
 
 		// Goroutines, strict parallelism
 		ctx, cancel := context.WithTimeout(rootCtx, env.RPCTimeout)
+		responseContactChannel = make(chan []contact.Contact, k*alpha) // TODO look at size
 		for i := 0; i < alpha && i < len(candidates); i++ {
 			wg.Add(1)
 			visitedSet.Add(candidates[i])
@@ -66,9 +67,9 @@ func (n *Node) findNode(rootCtx context.Context, target *contact.Contact) []cont
 
 		wg.Wait()
 		cancel() //TODO maybe move
+		close(responseContactChannel)
 		log.Printf("ROUTINES DONE")
 		for contacts := range responseContactChannel {
-
 			for _, contact := range contacts {
 				contact.CalcDistance(target.ID)
 
@@ -85,9 +86,7 @@ func (n *Node) findNode(rootCtx context.Context, target *contact.Contact) []cont
 					}
 				}
 			}
-			if len(responseContactChannel) == 0 { // TODO do better
-				break
-			}
+
 		}
 
 		// can we terminate?
