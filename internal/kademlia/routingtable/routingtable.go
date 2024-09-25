@@ -69,7 +69,7 @@ func (routingTable *RoutingTable) FindClosestContacts(target kademliaid.Kademlia
 
 	routingTable.mut.RUnlock()
 
-	contact.SortContacts(&candidates)
+	contact.SortContacts(candidates)
 
 	// Maybe we have too little
 	if count > len(candidates) {
@@ -78,7 +78,7 @@ func (routingTable *RoutingTable) FindClosestContacts(target kademliaid.Kademlia
 
 	// make sure blacklisted id is not in list
 	for _, node := range blacklist {
-		candidates = contact.RemoveID(candidates, node)
+		contact.RemoveID(candidates, node)
 	}
 
 	// If we have too much in our candidates, the get contacts function returns the right amount

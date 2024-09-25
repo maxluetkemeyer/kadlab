@@ -23,27 +23,24 @@ func NewContact(id kademliaid.KademliaID, address string) *Contact {
 
 // CalcDistance calculates the distance to the target and
 // fills the contacts distance field
-// TODO: target should be a contact
 func (contact *Contact) CalcDistance(target kademliaid.KademliaID) {
 	contact.distance = contact.ID.CalcDistance(target)
 }
 
 // Less returns true if contact.distance < otherContact.distance
-// TODO: Don't know if we use it in this way, lets see
 // We just compare distances here
-// TODO: It implements the comparable interface or smth like this, for sorting
 func (contact *Contact) Less(otherContact *Contact) bool {
 	return contact.distance.Less(otherContact.distance)
 }
 
 // String returns a simple string representation of a Contact
-// TODO: It should implement the standard toString interface, check this
 func (contact *Contact) String() string {
 	return fmt.Sprintf(`contact("%s", "%s")`, contact.ID, contact.Address)
 }
 
-func SortContacts(contacts *[]Contact) {
-	slices.SortStableFunc(*contacts, func(a, b Contact) int {
+// SortContacts sorts a slice of contacts
+func SortContacts(contacts []Contact) {
+	slices.SortStableFunc(contacts, func(a, b Contact) int {
 		if a.Less(&b) {
 			return -1
 		} else {
@@ -52,11 +49,11 @@ func SortContacts(contacts *[]Contact) {
 	})
 }
 
-func RemoveID(contacts []Contact, id kademliaid.KademliaID) (contactsWithoutId []Contact) {
+// RemoveID filters a slice of contact and removes any instance of a contact with matching id.
+func RemoveID(contacts []Contact, id kademliaid.KademliaID) {
 	for idx, contact := range contacts {
 		if contact.ID.Equals(id) {
-			return append(contacts[:idx], contacts[idx+1:]...)
+			contacts = append(contacts[:idx], contacts[idx+1:]...)
 		}
 	}
-	return contacts
 }
