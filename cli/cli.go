@@ -12,39 +12,48 @@ import (
 
 func InputLoop(ctx context.Context, cancelCtx context.CancelFunc, stdin io.Reader, node *node.Node) error {
 	reader := bufio.NewReader(os.Stdin)
+	errChan := make(chan error, 1)
 
-	for {
-		fmt.Printf("$")
+	go func() {
+		for {
+			fmt.Printf("$")
 
-		input, err := reader.ReadString('\n')
-		if err != nil {
-			return err
-		}
+			input, err := reader.ReadString('\n')
+			if err != nil {
+				errChan <- err
+			}
 
-		if len(input) > 0 {
-			command := strings.Fields(strings.TrimSpace(input))
-			switch command[0] {
-			case "put":
-				node.PutObject()
-				panic("TODO")
-			case "get":
-				hash := command[1]
-				if hash == "" {
-					fmt.Println("no hash was provided")
-					break
+			if len(input) > 0 {
+				command := strings.Fields(strings.TrimSpace(input))
+				switch command[0] {
+				case "put":
+					node.PutObject()
+					panic("TODO")
+				case "get":
+					hash := command[1]
+					if hash == "" {
+						fmt.Println("no hash was provided")
+						break
+					}
+					node.GetObject(ctx, hash)
+					panic("TODO")
+				case "exit":
+					cancelCtx()
+				case "forget":
+					panic("TODO")
+				default:
+					fmt.Println("invalid command")
 				}
-				node.GetObject(ctx, hash)
-				panic("TODO")
-			case "exit":
-				cancelCtx()
-				return ctx.Err()
-			case "forget":
-				panic("TODO")
-			default:
-				fmt.Println("invalid command")
 			}
 		}
+	}()
 
+	for {
+		select {
+		case err := <-errChan:
+			return err
+		case <-ctx.Done():
+			return ctx.Err()
+		}
 	}
-
 }
