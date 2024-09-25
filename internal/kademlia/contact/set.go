@@ -45,14 +45,14 @@ func NewContactSet() *ContactSet {
 // 	fmt.Println("list of all items:", s.List())
 // }
 
-// Add add a contact to the set
+// Add adds a contact to the set
 func (s *ContactSet) Add(item Contact) {
 	s.Lock()
 	defer s.Unlock()
 	s.m[item] = true
 }
 
-// Add add a slice of contacts to the set
+// Add adds a slice of contacts to the set
 func (s *ContactSet) Adds(items []Contact) {
 	s.Lock()
 	defer s.Unlock()

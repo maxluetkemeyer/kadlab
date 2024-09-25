@@ -2,62 +2,46 @@ package kademliaid
 
 import (
 	"encoding/hex"
-	"fmt"
 	"math/rand"
 
 	"d7024e_group04/env"
 )
 
-// TODO bad package naming, kademliaid.KademliaID
-
-// the static number of bytes in a KademliaID
-// TODO: Why use bytes and not bit? Does go has a bit interface? No it does not
-// 160 / 8 = 20
-// TODO: should it not be private?
-
-// type definition of a KademliaID
-// 20 byte array
+// The static number of bytes in a KademliaID. 160 / 8 = 20
 type KademliaID [env.IDLength]byte
 
-// NewKademliaID returns a new instance of a KademliaID based on the string input
-func NewKademliaID(data string) *KademliaID {
+// NewKademliaID returns a new KademliaID based on the string input
+func NewKademliaID(data string) KademliaID {
 	// TODO: data is stored as hex at the moment
 	// byte and error
 	decoded, _ := hex.DecodeString(data)
 
 	// new variable, only declared (initialized with the "zero" value)
-	// u cant use := outside a function
 	newKademliaID := KademliaID{}
-	// TODO: this for loop literaly makes no sense, you can directly assign it
+	// TODO: this for loop literally makes no sense, you can directly assign it
 	for i := 0; i < env.IDLength; i++ {
 		newKademliaID[i] = decoded[i]
 	}
 
 	// the address of the new internal id
-	return &newKademliaID
+	return newKademliaID
 }
 
-// NewRandomKademliaID returns a new instance of a random KademliaID,
-// TODO: change this to a better version if you like
-func NewRandomKademliaID() *KademliaID {
+// NewRandomKademliaID returns a new random KademliaID,
+func NewRandomKademliaID() KademliaID {
 	newKademliaID := KademliaID{}
-	for i := 0; i < env.IDLength; i++ {
+	for i := range env.IDLength {
 		newKademliaID[i] = uint8(rand.Intn(256))
 	}
-	return &newKademliaID
+	return newKademliaID
 }
 
-// TODO: test function
-func NewKademliaIDFromBytes(data []byte) (*KademliaID, error) {
-	if (len(data) == env.IDLength) {
-		return (*KademliaID)(data), nil
-	}
-
-	return nil, fmt.Errorf("unable to create a KademliaID from bytes: %v", data)
+func NewKademliaIDFromBytes(data [env.IDLength]byte) KademliaID {
+	return data
 }
 
 // Less returns true if kademliaID < otherKademliaID (bitwise)
-func (kademliaID KademliaID) Less(otherKademliaID *KademliaID) bool {
+func (kademliaID KademliaID) Less(otherKademliaID KademliaID) bool {
 	for i := 0; i < env.IDLength; i++ {
 		if kademliaID[i] != otherKademliaID[i] {
 			return kademliaID[i] < otherKademliaID[i]
@@ -67,7 +51,7 @@ func (kademliaID KademliaID) Less(otherKademliaID *KademliaID) bool {
 }
 
 // Equals returns true if kademliaID == otherKademliaID (bitwise)
-func (kademliaID KademliaID) Equals(otherKademliaID *KademliaID) bool {
+func (kademliaID KademliaID) Equals(otherKademliaID KademliaID) bool {
 	for i := 0; i < env.IDLength; i++ {
 		if kademliaID[i] != otherKademliaID[i] {
 			return false
@@ -76,27 +60,15 @@ func (kademliaID KademliaID) Equals(otherKademliaID *KademliaID) bool {
 	return true
 }
 
-// CalcDistance returns a new instance of a KademliaID that is built
-// through a bitwise XOR operation betweeen kademliaID and target
-func (kademliaID KademliaID) CalcDistance(target *KademliaID) *KademliaID {
-	result := KademliaID{}
-	for i := 0; i < env.IDLength; i++ {
-		// bitwise XOR
-		result[i] = kademliaID[i] ^ target[i]
-	}
-	return &result
-}
-
-// String returns a simple string representation of a KademliaID
-// TODO: do we want to work with hex?
-func (kademliaID *KademliaID) String() string {
-	return hex.EncodeToString(kademliaID[0:env.IDLength])
+// String returns a simple hex string representation of a KademliaID
+func (kademliaID KademliaID) String() string {
+	return hex.EncodeToString(kademliaID.Bytes())
 }
 
 // Bytes returns the kademliaID as a byte array
-func (KademliaID *KademliaID) Bytes() []byte {
+func (kademliaID KademliaID) Bytes() []byte {
 	bytes := make([]byte, 0, env.IDLength)
-	for _, b := range *KademliaID {
+	for _, b := range kademliaID {
 		bytes = append(bytes, b)
 	}
 	return bytes

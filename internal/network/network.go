@@ -22,5 +22,5 @@ type ServerRPC interface {
 }
 
 type Network interface {
-	ResolveDNS(ctx context.Context, domain string) ([]string, error)
+	ResolveDNS(domain string) ([]string, error)
 }

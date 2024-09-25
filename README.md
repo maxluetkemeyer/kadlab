@@ -55,7 +55,7 @@ If there are race conditions that your tests never touch, then they will not be 
 The instructions say that the report needs to include "a system architecture description that also contains an implementation overview".
 A common question is what this should look like.
 Ultimately, the point is that you are supposed to communicate to someone how your system is designed.
-What are the main components, and how do they communicate with each other, etc?
+What are the main components, and how do they communicate with each other, etc.?
 Just like you have to make choices about what the best way is to design and implement your solution, you have to make choices about what the best way is to communicate to someone else what you have done.
 
 Try this: imagine that we change the assignment so that the students next year will get your implementation as a starting point and are asked to improve it, such as adding features.

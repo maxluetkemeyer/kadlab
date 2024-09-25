@@ -11,19 +11,20 @@ import (
 // 3-tuple mentioned in the paper
 // TODO: It is not like the paper <ip, udp port, node id>, but <id, address(ip+port), distance(maybe cached)>
 type Contact struct {
-	ID       *kademliaid.KademliaID
+	ID       kademliaid.KademliaID
 	Address  string
-	distance *kademliaid.KademliaID
+	distance kademliaid.KademliaID
 }
 
 // NewContact returns a new instance of a Contact
-func NewContact(id *kademliaid.KademliaID, address string) Contact {
-	return Contact{id, address, nil}
+func NewContact(id kademliaid.KademliaID, address string) *Contact {
+	return &Contact{id, address, kademliaid.KademliaID{}}
 }
 
 // CalcDistance calculates the distance to the target and
 // fills the contacts distance field
-func (contact *Contact) CalcDistance(target *kademliaid.KademliaID) {
+// TODO: target should be a contact
+func (contact *Contact) CalcDistance(target kademliaid.KademliaID) {
 	contact.distance = contact.ID.CalcDistance(target)
 }
 
@@ -51,7 +52,7 @@ func SortContacts(contacts *[]Contact) {
 	})
 }
 
-func RemoveID(contacts []Contact, id *kademliaid.KademliaID) (contactsWithoutId []Contact) {
+func RemoveID(contacts []Contact, id kademliaid.KademliaID) (contactsWithoutId []Contact) {
 	for idx, contact := range contacts {
 		if contact.ID.Equals(id) {
 			return append(contacts[:idx], contacts[idx+1:]...)

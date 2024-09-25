@@ -17,8 +17,8 @@ func TestMemoryStore(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if string(got) != want {
-			t.Errorf("got %s, want %s", string(got), want)
+		if got != want {
+			t.Errorf("got %s, want %s", got, want)
 		}
 
 	})

@@ -1,14 +1,13 @@
 package network
 
 import (
-	"context"
 	"fmt"
 	"net"
 )
 
 type PublicNetwork struct{}
 
-func (network *PublicNetwork) ResolveDNS(ctx context.Context, domain string) ([]string, error) {
+func (network *PublicNetwork) ResolveDNS(domain string) ([]string, error) {
 	// Perform a DNS lookup for the given domain
 	ipAddresses, err := net.LookupIP(domain)
 

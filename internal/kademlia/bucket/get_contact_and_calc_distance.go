@@ -7,7 +7,7 @@ import (
 
 // GetContactAndCalcDistance returns an array of Contacts where
 // the distance has already been calculated
-func (bucket *Bucket) GetContactAndCalcDistance(targetId *kademliaid.KademliaID) []contact.Contact {
+func (bucket *Bucket) GetContactAndCalcDistance(targetId kademliaid.KademliaID) []contact.Contact {
 	var contactsWithDistances []contact.Contact
 
 	for contactElement := bucket.list.Front(); contactElement != nil; contactElement = contactElement.Next() {

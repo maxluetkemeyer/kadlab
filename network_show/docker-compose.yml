@@ -1,9 +1,0 @@
-services:
-  mynode:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    deploy:
-      mode: replicated
-      replicas: 10
-      endpoint_mode: dnsrr

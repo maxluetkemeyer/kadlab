@@ -37,7 +37,7 @@ func New(client network.ClientRPC, routingTable *routingtable.RoutingTable, stor
  4. it refreshes all buckets further away than its closest neighbor, which will be in the occupied bucket with the lowest index.
 */
 func (n *Node) Bootstrap(ctx context.Context) error {
-	addresses, err := n.kNet.ResolveDNS(ctx, env.NodesProxyDomain)
+	addresses, err := n.kNet.ResolveDNS(env.NodesProxyDomain)
 	if err != nil {
 		return err
 	}
@@ -54,14 +54,14 @@ func (n *Node) Bootstrap(ctx context.Context) error {
 	log.Printf("addresses:%v\n", addresses)
 
 	me := n.RoutingTable.Me()
-	contact, err := n.pingContacts(ctx, &me, addresses)
+	contact, err := n.pingContacts(ctx, me, addresses)
 	if err != nil {
 		return err
 	}
 
 	n.RoutingTable.AddContact(*contact)
 	// TODO: iterative search, should we update once for the list or for each node visited in findNode?
-	closestContacts := n.findNode(ctx, &me)
+	closestContacts := n.findNode(ctx, me)
 	for _, contact := range closestContacts {
 		n.RoutingTable.AddContact(contact)
 	}
@@ -79,7 +79,7 @@ func (n *Node) PutObject() {
 
 // Get takes hash and outputs the contents of the object and the node it was retrieved
 func (n *Node) GetObject(rootCtx context.Context, hash string) (data string, err error) {
-	me := n.RoutingTable.Me()
+	me := *n.RoutingTable.Me()
 	// check local store, if it was not found do clientRPC call
 	if value, err := n.Store.GetValue(hash); err == nil {
 		return value, nil

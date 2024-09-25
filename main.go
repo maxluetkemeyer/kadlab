@@ -46,7 +46,7 @@ func main() {
 	log.Printf("Node shutdown, reason: %v", err)
 }
 
-func createOwnContact() (me contact.Contact) {
+func createOwnContact() (me *contact.Contact) {
 	host, err := os.Hostname()
 	if err != nil {
 		log.Fatal(err.Error())

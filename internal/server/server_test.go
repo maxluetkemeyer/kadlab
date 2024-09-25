@@ -126,8 +126,8 @@ func TestServer_FindNode(t *testing.T) {
 	})
 }
 
-func fillRoutingTable(count int, routingTable *routingtable.RoutingTable, blacklist *kademliaid.KademliaID) {
-	var kID *kademliaid.KademliaID
+func fillRoutingTable(count int, routingTable *routingtable.RoutingTable, blacklist kademliaid.KademliaID) {
+	var kID kademliaid.KademliaID
 
 	for range count {
 		for {
@@ -137,15 +137,15 @@ func fillRoutingTable(count int, routingTable *routingtable.RoutingTable, blackl
 			}
 		}
 
-		contact := contact.NewContact(kID, fmt.Sprintf("node %v", count))
+		contact0 := *contact.NewContact(kID, fmt.Sprintf("node %v", count))
 
-		routingTable.AddContact(contact)
+		routingTable.AddContact(contact0)
 	}
 }
 
 func TimeoutContext(ctx context.Context, cancel context.CancelFunc) {
 	<-ctx.Done()
-	// timeout test, did not shutdown on context cancel
+	// timeout test, did not shut down on context cancel
 	time.Sleep(30 * time.Second)
 	cancel()
 	panic("context timed out but test did not finish")
