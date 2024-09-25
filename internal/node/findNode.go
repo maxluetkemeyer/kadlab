@@ -52,7 +52,7 @@ func (n *Node) findNode(rootCtx context.Context, target *contact.Contact) []cont
 
 			go func() {
 				defer wg.Done()
-				contacts, err := n.Client.SendFindNode(ctx, me, &candidates[i])
+				contacts, err := n.Client.SendFindNode(ctx, *me, candidates[i].Address, target.ID)
 
 				if err != nil {
 					kClosets.remove(candidates[i])
@@ -74,6 +74,7 @@ func (n *Node) findNode(rootCtx context.Context, target *contact.Contact) []cont
 				contact.CalcDistance(target.ID)
 
 				// TODO refactor ifs
+				// TODO BUG: FIX DUPLICATE NODES!!!
 				if len(kClosets.list) < k {
 					kClosets.list = append(kClosets.list, contact)
 					kClosets.sort()

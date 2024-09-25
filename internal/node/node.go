@@ -130,7 +130,7 @@ func (n *Node) GetObject(rootCtx context.Context, hash string) (data string, err
 // TODO: add concurrency
 func (n *Node) pingContacts(ctx context.Context, me *contact.Contact, targetIps []string) (*contact.Contact, error) {
 	for _, targetIp := range targetIps {
-		contact, err := n.Client.SendPing(ctx, me, targetIp+":50051") // TODO fix this port
+		contact, err := n.Client.SendPing(ctx, *me, targetIp+":50051") // TODO fix this port
 		if err == nil {
 			return contact, nil
 		}

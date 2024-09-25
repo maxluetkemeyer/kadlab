@@ -1,6 +1,7 @@
 package kademliaid
 
 import (
+	"crypto/sha1"
 	"encoding/hex"
 	"math/rand"
 
@@ -11,6 +12,7 @@ import (
 type KademliaID [env.IDLength]byte
 
 // NewKademliaID returns a new KademliaID based on the string input
+// TODO what is the use for this?
 func NewKademliaID(data string) KademliaID {
 	// TODO: data is stored as hex at the moment
 	// byte and error
@@ -38,6 +40,16 @@ func NewRandomKademliaID() KademliaID {
 
 func NewKademliaIDFromBytes(data [env.IDLength]byte) KademliaID {
 	return data
+}
+
+func NewKademliaIDFromData(data string) KademliaID {
+	// sha1 for now since it gives us 160 bit hash, we could use something better and truncate to 160 but specification mentioned sha1
+	hasher := sha1.New()
+	hasher.Write([]byte(data))
+
+	hash := hasher.Sum(nil)
+
+	return [env.IDLength]byte(hash)
 }
 
 // Less returns true if kademliaID < otherKademliaID (bitwise)

@@ -14,13 +14,12 @@ import (
 )
 
 type Client struct {
-	pb.KademliaClient
-	opts []grpc.DialOption
+	grpcClient pb.KademliaClient
+	conn       *grpc.ClientConn
+	opts       []grpc.DialOption
 }
 
-// TODO: Lets start with a simulated network
-// TODO: Define a network interface to have a simulated on and a real one (and maybe a spy test one)
-
+// NewClient returns a client with optional dial options
 func NewClient(opts ...grpc.DialOption) *Client {
 	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	return &Client{
@@ -30,33 +29,33 @@ func NewClient(opts ...grpc.DialOption) *Client {
 
 // initConnection returns a grpc connection and client to the target address
 // It is callers responsibility to close the connection after use to prevent leakage
-func (c *Client) NewConnection(address string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+func (c *Client) connectTo(address string, opts ...grpc.DialOption) error {
 	opts = append(opts, c.opts...)
 	conn, err := grpc.NewClient(address, opts...)
 	if err != nil {
+		return fmt.Errorf("failed to create connection to address: %v, err: %v", address, err)
+	}
+
+	c.conn = conn
+	c.grpcClient = pb.NewKademliaClient(conn)
+
+	return nil
+}
+
+// SendPingMessage sends a Ping rpc call to the target. Returns the contact of target node.
+func (c *Client) SendPing(ctx context.Context, me contact.Contact, target string) (*contact.Contact, error) {
+	if err := c.connectTo(target); err != nil {
 		return nil, err
 	}
 
-	return conn, nil
-}
-
-// SendPingMessage sends an rpc call to the target contact. If a reply is received the bucket is updated with the target contact.
-func (c *Client) SendPing(ctx context.Context, me *contact.Contact, target string) (*contact.Contact, error) {
-	conn, err := c.NewConnection(target)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create connection to address: %v, err: %v", target, err)
-	}
-
-	defer conn.Close()
-
-	grpc := pb.NewKademliaClient(conn)
+	defer c.conn.Close()
 
 	payload := &pb.Node{
 		ID:         me.ID.Bytes(),
 		IPWithPort: me.Address,
 	}
 
-	responseNode, err := grpc.Ping(ctx, payload)
+	responseNode, err := c.grpcClient.Ping(ctx, payload)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to ping address %v, err: %v", target, err)
@@ -67,24 +66,22 @@ func (c *Client) SendPing(ctx context.Context, me *contact.Contact, target strin
 	return &contact, nil
 }
 
-func (c *Client) SendFindNode(ctx context.Context, me, target *contact.Contact) ([]contact.Contact, error) {
-	conn, err := c.NewConnection(target.Address)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create connection to address: %v, err: %v", target.Address, err)
+// SendFindNode sends a FindNode rpc call to the candidate node. Returns the closest nodes to target node from the candidate.
+func (c *Client) SendFindNode(ctx context.Context, me contact.Contact, candidateAddress string, targetID kademliaid.KademliaID) ([]contact.Contact, error) {
+	if err := c.connectTo(candidateAddress); err != nil {
+		return nil, err
 	}
 
-	defer conn.Close()
-
-	grpc := pb.NewKademliaClient(conn)
+	defer c.conn.Close()
 
 	payload := &pb.FindNodeRequest{
-		TargetID:       target.ID.Bytes(),
-		RequestingNode: &pb.Node{ID: me.ID.Bytes(), IPWithPort: me.Address},
+		TargetID:       targetID.Bytes(),
+		RequestingNode: contactToPbNode(me),
 	}
 
-	resp, err := grpc.FindNode(ctx, payload)
+	resp, err := c.grpcClient.FindNode(ctx, payload)
 	if err != nil {
-		return nil, fmt.Errorf("failed to send FIND_NODE RPC to address: %v, err: %v", target.Address, err)
+		return nil, fmt.Errorf("failed to send FIND_NODE RPC to address: %v, err: %v", candidateAddress, err)
 	}
 
 	contacts := make([]contact.Contact, 0, len(resp.Nodes))
@@ -102,22 +99,21 @@ func (c *Client) SendFindNode(ctx context.Context, me, target *contact.Contact) 
 	return contacts, nil
 }
 
+// SendFindValue sends a FindNode rpc call to the target contact with a hash value.
+// Returns the data if it is found on the target contact, otherwise a slice of candidate nodes closest to the hash value.
 func (c *Client) SendFindValue(ctx context.Context, me, target contact.Contact, hash string) (candidates []contact.Contact, data string, err error) {
-	conn, err := c.NewConnection(target.Address)
-	if err != nil {
-		return nil, "", fmt.Errorf("failed to create connection to address: %v, err: %v", target.Address, err)
+	if err := c.connectTo(target.Address); err != nil {
+		return nil, "", err
 	}
 
-	defer conn.Close()
-
-	grpc := pb.NewKademliaClient(conn)
+	defer c.conn.Close()
 
 	payload := &pb.FindValueRequest{
-		Hash:           kademliaid.NewKademliaID(hash).Bytes(),
-		RequestingNode: &pb.Node{ID: me.ID.Bytes(), IPWithPort: me.Address},
+		Hash:           kademliaid.NewKademliaIDFromData(hash).Bytes(),
+		RequestingNode: contactToPbNode(me),
 	}
 
-	resp, err := grpc.FindValue(ctx, payload)
+	resp, err := c.grpcClient.FindValue(ctx, payload)
 
 	if err != nil {
 		return nil, "", fmt.Errorf("rpc server returned err: %v", err)
@@ -136,7 +132,7 @@ func (c *Client) SendFindValue(ctx context.Context, me, target contact.Contact, 
 		return candidates, "", nil
 
 	default:
-		return nil, "", fmt.Errorf("response type invalid")
+		return nil, "", fmt.Errorf("response type invalid, resp: %v", respValue)
 	}
 }
 
@@ -146,4 +142,8 @@ func (c *Client) SendStore(ctx context.Context, data string) error {
 
 func pbNodeToContact(node *pb.Node) contact.Contact {
 	return *contact.NewContact((kademliaid.KademliaID)(node.ID), node.IPWithPort)
+}
+
+func contactToPbNode(contact contact.Contact) *pb.Node {
+	return &pb.Node{ID: contact.ID.Bytes(), IPWithPort: contact.Address}
 }
