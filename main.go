@@ -83,7 +83,7 @@ func startAPI(errGroup *errgroup.Group, errCtx context.Context, node *node.Node)
 func startCLI(errGroup *errgroup.Group, errCtx context.Context, cancelCtx context.CancelFunc, node *node.Node) {
 	errGroup.Go(func() error {
 		log.Println("STARTING CLI")
-		return cli.InputLoop(errCtx, cancelCtx, os.Stdin, node)
+		return cli.InputLoop(errCtx, cancelCtx, node)
 	})
 }
 
