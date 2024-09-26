@@ -12,18 +12,13 @@ import (
 type KademliaID [env.IDLength]byte
 
 // NewKademliaID returns a new KademliaID based on the string input
-// TODO what is the use for this?
-func NewKademliaID(data string) KademliaID {
-	// TODO: data is stored as hex at the moment
-	// byte and error
-	decoded, _ := hex.DecodeString(data)
+// TODO: Does not perform length checking yet!
+func NewKademliaID(dataAsHexString string) KademliaID {
+	// []byte and error
+	decoded, _ := hex.DecodeString(dataAsHexString)
 
 	// new variable, only declared (initialized with the "zero" value)
-	newKademliaID := KademliaID{}
-	// TODO: this for loop literally makes no sense, you can directly assign it
-	for i := 0; i < env.IDLength; i++ {
-		newKademliaID[i] = decoded[i]
-	}
+	newKademliaID := KademliaID(decoded)
 
 	// the address of the new internal id
 	return newKademliaID
