@@ -9,86 +9,94 @@ import (
 	"d7024e_group04/internal/kademlia/contact"
 )
 
-func (n *Node) findNode(rootCtx context.Context, target *contact.Contact) []*contact.Contact {
-	log.Println("FINDING NODES")
-	alpha := env.Alpha
-	k := env.BucketSize
+// TODO maybe reconsider how we init these for tests. this is assigned during init time
+var (
+	alpha = env.Alpha
+	k     = env.BucketSize
+)
+
+func (n *Node) findNode(rootCtx context.Context, contactWeAreSearchingFor *contact.Contact) []*contact.Contact {
 	visitedSet := contact.NewContactSet()
-	kClosets := kClosestList{}
+	kClosest := &kClosestList{}
 
-	wg := new(sync.WaitGroup)
+	// TODO these are reassigned during runtime
+	alpha = env.Alpha
+	k = env.BucketSize
 
-	var responseContactChannel chan []*contact.Contact
-
-	kClosets.list = n.RoutingTable.FindClosestContacts(target.ID, k)
+	kClosest.list = n.RoutingTable.FindClosestContacts(contactWeAreSearchingFor.ID, k)
 
 	for {
-		kClosets.updated = false
+		kClosest.updated = false
 
-		// get kClosest that are unvisited
-		// TODO fix, tried to use contact.candidates but did not work. find some nicer way
-		var candidates []*contact.Contact
-		for _, closeContact := range kClosets.list {
-			if !visitedSet.Has(closeContact) {
-				candidates = append(candidates, closeContact)
-			}
-		}
-		// candidates should already be sorted
-
-		// Goroutines, strict parallelism
-		ctx, cancel := context.WithTimeout(rootCtx, env.RPCTimeout)
-		responseContactChannel = make(chan []*contact.Contact, k*alpha) // TODO look at size
-		for i := 0; i < alpha && i < len(candidates); i++ {
-			wg.Add(1)
-			visitedSet.Add(candidates[i])
-
-			go func() {
-				defer wg.Done()
-				contacts, err := n.Client.SendFindNode(ctx, candidates[i], target)
-
-				if err != nil {
-					kClosets.remove(candidates[i])
-					// TODO fix logging solution
-					log.Printf("WARNING: findNode error: %v", err)
-					return
-				}
-
-				responseContactChannel <- contacts
-			}()
-		}
-
-		wg.Wait()
-		cancel() //TODO maybe move
-		close(responseContactChannel)
-		log.Printf("ROUTINES DONE")
-		for contacts := range responseContactChannel {
-			for _, contact := range contacts {
-				contact.CalcDistance(target.ID)
-
-				if kClosets.Has(contact) {
-					continue
-				}
-
-				if len(kClosets.list) < k {
-					kClosets.list = append(kClosets.list, contact)
-					kClosets.sort()
-					kClosets.updated = true
-				} else {
-					if contact.Less(kClosets.list[k-1]) {
-						kClosets.list[k-1] = contact
-						kClosets.sort()
-						kClosets.updated = true
-					}
-				}
-			}
-
-		}
+		n.findNodeIteration(rootCtx, contactWeAreSearchingFor, visitedSet, kClosest)
 
 		// can we terminate?
-		log.Printf("updated: %v, is subset: %v", kClosets.updated, kClosets.isSubset(visitedSet))
-		if !kClosets.updated && kClosets.isSubset(visitedSet) {
-			log.Printf("DONE")
-			return kClosets.list
+		if !kClosest.updated && kClosest.isSubset(visitedSet) {
+			return kClosest.list
+		}
+
+	}
+}
+
+func (n *Node) findNodeIteration(
+	rootCtx context.Context,
+	contactWeAreSearchingFor *contact.Contact,
+	visitedSet *contact.ContactSet,
+	kClosest *kClosestList) {
+
+	// get kClosest that are unvisited
+	// candidates should already be sorted
+	candidates := getCandidates(kClosest, visitedSet)
+
+	// run findNode in strict parallelism and wait for responses
+	ctx, cancel := context.WithTimeout(rootCtx, env.RPCTimeout)
+	wg := new(sync.WaitGroup)
+	responseContactChannel := n.runParallelFindNodeRequest(ctx, candidates, wg, visitedSet, contactWeAreSearchingFor, kClosest)
+	wg.Wait()
+	close(responseContactChannel)
+	cancel() // prevent context leaks, need to be called
+
+	// loop through responses and add to kClosest
+	for contacts := range responseContactChannel {
+		kClosest.addContacts(contacts, contactWeAreSearchingFor)
+	}
+}
+
+func (n *Node) runParallelFindNodeRequest(
+	ctx context.Context,
+	candidates []*contact.Contact,
+	wg *sync.WaitGroup,
+	visitedSet *contact.ContactSet,
+	contactWeAreSearchingFor *contact.Contact,
+	kClosest *kClosestList) chan []*contact.Contact {
+	// Goroutines, strict parallelism
+	responseContactChannel := make(chan []*contact.Contact, alpha)
+
+	for i := 0; i < alpha && i < len(candidates); i++ {
+		wg.Add(1)
+		visitedSet.Add(candidates[i])
+
+		go func() {
+			defer wg.Done()
+			contacts, err := n.Client.SendFindNode(ctx, candidates[i], contactWeAreSearchingFor)
+
+			if err != nil {
+				kClosest.remove(candidates[i])
+				log.Printf("WARNING: client findNode error: %v", err)
+				return
+			}
+
+			responseContactChannel <- contacts
+		}()
+	}
+	return responseContactChannel
+}
+
+func getCandidates(kClosest *kClosestList, visitedSet *contact.ContactSet) (candidates []*contact.Contact) {
+	for _, closeContact := range kClosest.list {
+		if !visitedSet.Has(closeContact) {
+			candidates = append(candidates, closeContact)
 		}
 	}
+	return candidates
 }
