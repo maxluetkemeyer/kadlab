@@ -16,6 +16,11 @@ func NewKademliaID(data string) KademliaID {
 	// byte and error
 	decoded, _ := hex.DecodeString(data)
 
+	// If the hex is smaller than env.IDLength, just pad it with zeros
+	for i := len(decoded); i < env.IDLength; i++ {
+		decoded[i] = 0
+	}
+
 	// new variable, only declared (initialized with the "zero" value)
 	newKademliaID := KademliaID{}
 	// TODO: this for loop literally makes no sense, you can directly assign it
