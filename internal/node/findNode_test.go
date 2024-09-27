@@ -34,7 +34,7 @@ func newTestNode(me *contact.Contact, contacts []*contact.Contact) *TestNode {
 	routingTable := routingtable.NewRoutingTable(me)
 
 	for _, c := range contacts {
-		routingTable.AddContact(*c)
+		routingTable.AddContact(c)
 	}
 
 	return &TestNode{
@@ -89,25 +89,27 @@ func populateTestNodes() map[string]*TestNode {
 }
 
 type ClientMock struct {
+	me        *contact.Contact
 	testNodes map[string]*TestNode
 }
 
-func newClientMock(testNodes map[string]*TestNode) *ClientMock {
+func newClientMock(testNodes map[string]*TestNode, me *contact.Contact) *ClientMock {
 	return &ClientMock{
+		me:        me,
 		testNodes: testNodes,
 	}
 }
 
-func (c *ClientMock) SendPing(ctx context.Context, me *contact.Contact, target string) (*contact.Contact, error) {
+func (c *ClientMock) SendPing(ctx context.Context, targetIpWithPort string) (*contact.Contact, error) {
 	return nil, fmt.Errorf("should not be used")
 }
 
-func (c *ClientMock) SendFindNode(ctx context.Context, me *contact.Contact, candidate string, targetId kademliaid.KademliaID) ([]contact.Contact, error) {
-	candidateNode := c.testNodes[candidate]
-	return candidateNode.routingTable.FindClosestContacts(targetId, env.BucketSize, me.ID), nil
+func (c *ClientMock) SendFindNode(ctx context.Context, contactWeRequest, contactWeAreSearchingFor *contact.Contact) ([]*contact.Contact, error) {
+	candidateNode := c.testNodes[contactWeRequest.Address]
+	return candidateNode.routingTable.FindClosestContacts(contactWeAreSearchingFor.ID, env.BucketSize), nil
 }
 
-func (c *ClientMock) SendFindValue(ctx context.Context, me, target contact.Contact, hash string) ([]contact.Contact, string, error) {
+func (c *ClientMock) SendFindValue(ctx context.Context, contactWeRequest *contact.Contact, hash string) ([]*contact.Contact, string, error) {
 	return nil, "", fmt.Errorf("should not be used")
 }
 
@@ -127,7 +129,7 @@ func TestFindNode(t *testing.T) {
 		// We are 18
 		node := Node{
 			RoutingTable: testNodes[":18"].routingTable,
-			Client:       newClientMock(testNodes),
+			Client:       newClientMock(testNodes, testNodes[":18"].contact),
 		}
 
 		// Trying to find 13
