@@ -3,18 +3,11 @@ package node
 import (
 	"context"
 	"log"
-	"slices"
 	"sync"
 
 	"d7024e_group04/env"
 	"d7024e_group04/internal/kademlia/contact"
 )
-
-type kClosestList struct {
-	mut     sync.RWMutex
-	list    []*contact.Contact
-	updated bool
-}
 
 func (n *Node) findNode(rootCtx context.Context, target *contact.Contact) []*contact.Contact {
 	log.Println("FINDING NODES")
@@ -72,8 +65,6 @@ func (n *Node) findNode(rootCtx context.Context, target *contact.Contact) []*con
 			for _, contact := range contacts {
 				contact.CalcDistance(target.ID)
 
-				// TODO refactor ifs
-				// TODO BUG: FIX DUPLICATE NODES!!!
 				if kClosets.Has(contact) {
 					continue
 				}
@@ -100,50 +91,4 @@ func (n *Node) findNode(rootCtx context.Context, target *contact.Contact) []*con
 			return kClosets.list
 		}
 	}
-}
-
-func (kClosestList *kClosestList) Has(targetContact *contact.Contact) bool {
-	for _, c := range kClosestList.list {
-		if c.ID.Equals(targetContact.ID) {
-			return true
-		}
-	}
-	return false
-}
-
-func (kClosestList *kClosestList) isSubset(set *contact.ContactSet) bool {
-	for _, contact := range kClosestList.list {
-		if !set.Has(contact) {
-			return false
-		}
-	}
-	return true
-}
-
-func (kClosestList *kClosestList) sort() {
-	kClosestList.mut.Lock()
-	defer kClosestList.mut.Unlock()
-	slices.SortStableFunc(kClosestList.list, func(a, b *contact.Contact) int {
-		if a.Less(b) {
-			return -1
-		} else {
-			return 1
-		}
-	})
-}
-
-// TODO make good
-func (kClosestList *kClosestList) remove(target *contact.Contact) {
-	kClosestList.mut.Lock()
-	defer kClosestList.mut.Unlock()
-
-	var contactList []*contact.Contact
-
-	for _, contact := range kClosestList.list {
-		if !contact.ID.Equals(target.ID) {
-			contactList = append(contactList, contact)
-		}
-	}
-
-	kClosestList.list = contactList
 }

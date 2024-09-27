@@ -3,7 +3,6 @@ package node
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"testing"
 	"time"
 
@@ -139,8 +138,14 @@ func TestFindNode(t *testing.T) {
 		nodesFound := node.findNode(ctx, thirteen)
 
 		// Expecting 13,12,15,5
-		if !reflect.DeepEqual(expectedNodes, nodesFound) {
-			t.Fatalf("wrong nodes in response, expected: %v, got: %v", expectedNodes, nodesFound)
+		if len(nodesFound) != len(expectedNodes) {
+			t.Fatalf("wrong number of nodes, expected %v, got %v", len(expectedNodes), len(nodesFound))
+		}
+
+		for i, node := range nodesFound {
+			if !node.ID.Equals(expectedNodes[i].ID) {
+				t.Fatalf("wrong nodes, expected %v, got %v", expectedNodes, nodesFound)
+			}
 		}
 	})
 
