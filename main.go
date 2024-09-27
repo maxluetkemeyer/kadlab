@@ -32,7 +32,7 @@ func main() {
 	me := createOwnContact()
 	routingTable := routingtable.NewRoutingTable(me)
 	memoryStore := store.NewMemoryStore()
-	client := client.NewClient()
+	client := client.NewClient(me)
 	kNetwork := &network.PublicNetwork{}
 	node := node.New(client, routingTable, memoryStore, kNetwork)
 

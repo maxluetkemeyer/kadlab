@@ -7,7 +7,6 @@ import (
 
 	"d7024e_group04/env"
 	"d7024e_group04/internal/kademlia/contact"
-	"d7024e_group04/internal/kademlia/kademliaid"
 	"d7024e_group04/internal/kademlia/routingtable"
 	"d7024e_group04/internal/network"
 	"d7024e_group04/internal/store"
@@ -53,14 +52,14 @@ func (n *Node) Bootstrap(ctx context.Context) error {
 
 	log.Printf("addresses:%v\n", addresses)
 
-	me := n.RoutingTable.Me()
-	contact, err := n.pingContacts(ctx, me, addresses)
+	contact, err := n.pingIPsAndGetContact(ctx, addresses)
 	if err != nil {
 		return err
 	}
 
-	n.RoutingTable.AddContact(*contact)
+	n.RoutingTable.AddContact(contact)
 	// TODO: iterative search, should we update once for the list or for each node visited in findNode?
+	me := n.RoutingTable.Me()
 	closestContacts := n.findNode(ctx, me)
 	for _, contact := range closestContacts {
 		n.RoutingTable.AddContact(contact)
@@ -79,58 +78,14 @@ func (n *Node) PutObject() {
 
 // Get takes hash and outputs the contents of the object and the node it was retrieved
 func (n *Node) GetObject(rootCtx context.Context, hash string) (data string, err error) {
-	me := *n.RoutingTable.Me()
-	// check local store, if it was not found do clientRPC call
-	if value, err := n.Store.GetValue(hash); err == nil {
-		return value, nil
-	}
-
-	ctx, cancelCtx := context.WithCancel(rootCtx)
-	ch := make(chan struct{}, env.Alpha)
-	dataChan := make(chan string)
-	kademliaHash := kademliaid.NewKademliaID(hash)
-
-	shortlist := n.RoutingTable.FindClosestContacts(kademliaHash, env.BucketSize, me.ID)
-
-	for {
-		select {
-		case ch <- struct{}{}:
-			go func() {
-				candidates, data, err := n.Client.SendFindValue(ctx, shortlist[0], me, hash)
-				if err != nil {
-					// TODO mark as unavailable, check if ctx canceled?
-				}
-
-				if data != "" {
-					dataChan <- data
-
-				} else {
-					// TODO update shortlist
-					panic(candidates)
-				}
-			}()
-
-		case <-rootCtx.Done():
-			cancelCtx()
-			return "", rootCtx.Err()
-
-		case data := <-dataChan:
-			// cancel ctx as soon as value is found
-			cancelCtx()
-
-			// TODO store value in closest node if it did not have the value
-
-			return data, nil
-		}
-	}
-
+	panic("TODO")
 }
 
 // Ping each contact in <contacts> until one responeses and returns it.
 // TODO: add concurrency
-func (n *Node) pingContacts(ctx context.Context, me *contact.Contact, targetIps []string) (*contact.Contact, error) {
+func (n *Node) pingIPsAndGetContact(ctx context.Context, targetIps []string) (*contact.Contact, error) {
 	for _, targetIp := range targetIps {
-		contact, err := n.Client.SendPing(ctx, *me, targetIp+":50051") // TODO fix this port
+		contact, err := n.Client.SendPing(ctx, targetIp+":50051") // TODO fix this port
 		if err == nil {
 			return contact, nil
 		}

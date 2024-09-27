@@ -137,7 +137,7 @@ func fillRoutingTable(count int, routingTable *routingtable.RoutingTable, blackl
 			}
 		}
 
-		contact0 := *contact.NewContact(kID, fmt.Sprintf("node %v", count))
+		contact0 := contact.NewContact(kID, fmt.Sprintf("node %v", count))
 
 		routingTable.AddContact(contact0)
 	}

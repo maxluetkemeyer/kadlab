@@ -8,13 +8,13 @@ import (
 // or moves it to the front of the bucket if it already existed
 
 // TODO: Split up into multiple check functions and test them isolated
-func (bucket *Bucket) AddContact(newContact contact.Contact) {
+func (bucket *Bucket) AddContact(newContact *contact.Contact) {
 
 	// Is the new contact already stored in the list?
 	// Paper: "If the sending node already exists in the recipient’s k-bucket,
 	// the recipient moves it to the tail of the list."
 	for listContact := bucket.list.Front(); listContact != nil; listContact = listContact.Next() {
-		listContactId := listContact.Value.(contact.Contact).ID
+		listContactId := listContact.Value.(*contact.Contact).ID
 
 		if newContact.ID.Equals(listContactId) {
 			bucket.list.MoveToBack(listContact)

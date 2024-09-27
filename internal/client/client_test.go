@@ -22,14 +22,14 @@ var (
 
 func TestClient_SendPing(t *testing.T) {
 	startMockGrpcServer(serverID, serverAddress)
-	client := NewClient(grpc.WithContextDialer(bufDialer))
 
 	clientContact := contact.NewContact(clientID, clientAddress)
+	client := NewClient(clientContact, grpc.WithContextDialer(bufDialer))
 
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	go TimeoutContext(ctx, cancel)
 
-	resp, err := client.SendPing(ctx, *clientContact, mockServerAddress)
+	resp, err := client.SendPing(ctx, mockServerAddress)
 
 	if err != nil {
 		t.Fatalf("failed to ping, %v", err)
@@ -46,16 +46,17 @@ func TestClient_SendPing(t *testing.T) {
 
 func TestClient_SendFindNode(t *testing.T) {
 	server := startMockGrpcServer(serverID, serverAddress)
+	serverContact := contact.NewContact(serverID, mockServerAddress)
 
-	client := NewClient(grpc.WithContextDialer(bufDialer))
 	clientContact := contact.NewContact(clientID, clientAddress)
+	client := NewClient(clientContact, grpc.WithContextDialer(bufDialer))
 
 	contacts := server.fillRoutingTable(env.BucketSize)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	go TimeoutContext(ctx, cancel)
 
-	candidates, err := client.SendFindNode(ctx, *clientContact, mockServerAddress, clientContact.ID)
+	candidates, err := client.SendFindNode(ctx, serverContact, clientContact)
 	if err != nil {
 		t.Fatalf("failed to send find node request, %v", err)
 	}
@@ -72,8 +73,8 @@ func TestClient_SendFindNode(t *testing.T) {
 func TestClient_SendFindValue(t *testing.T) {
 	server := startMockGrpcServer(serverID, serverAddress)
 
-	client := NewClient(grpc.WithContextDialer(bufDialer))
 	clientContact := contact.NewContact(clientID, clientAddress)
+	client := NewClient(clientContact, grpc.WithContextDialer(bufDialer))
 
 	t.Run("Data exists on node", func(t *testing.T) {
 		value := "some_value"
@@ -84,7 +85,7 @@ func TestClient_SendFindValue(t *testing.T) {
 		go TimeoutContext(ctx, cancel)
 
 		targetNode := contact.NewContact(serverID, mockServerAddress)
-		candidates, data, err := client.SendFindValue(ctx, *clientContact, *targetNode, value)
+		candidates, data, err := client.SendFindValue(ctx, targetNode, value)
 		if err != nil {
 			t.Fatalf("failed to send find value request, %v", err)
 		}
@@ -103,7 +104,7 @@ func TestClient_SendFindValue(t *testing.T) {
 		go TimeoutContext(ctx, cancel)
 
 		targetNode := contact.NewContact(serverID, mockServerAddress)
-		candidates, data, err := client.SendFindValue(ctx, *clientContact, *targetNode, "non-existent")
+		candidates, data, err := client.SendFindValue(ctx, targetNode, "non-existent")
 		if err != nil {
 			t.Fatalf("failed to send find value request, %v", err)
 		}

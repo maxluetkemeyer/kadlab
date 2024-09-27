@@ -21,7 +21,7 @@ var lis *bufconn.Listener
 type mockGrpcServer struct {
 	pb.UnimplementedKademliaServer
 	ServerContact *contact.Contact
-	RoutingTable  []contact.Contact
+	RoutingTable  []*contact.Contact
 	DataStore     map[string]string
 }
 
@@ -75,12 +75,12 @@ func (m *mockGrpcServer) Store(ctx context.Context, in *pb.StoreRequest) (*pb.St
 	panic("TODO")
 }
 
-func (m *mockGrpcServer) fillRoutingTable(count int) (contacts []contact.Contact) {
+func (m *mockGrpcServer) fillRoutingTable(count int) (contacts []*contact.Contact) {
 	for i := range count {
 		id := kademliaid.NewRandomKademliaID()
 		address := fmt.Sprintf("server %v", i)
 
-		contacts = append(contacts, *contact.NewContact(id, address))
+		contacts = append(contacts, contact.NewContact(id, address))
 	}
 	m.RoutingTable = contacts
 	return

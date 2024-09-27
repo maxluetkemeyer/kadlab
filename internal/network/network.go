@@ -3,14 +3,13 @@ package network
 import (
 	"context"
 	"d7024e_group04/internal/kademlia/contact"
-	"d7024e_group04/internal/kademlia/kademliaid"
 	pb "d7024e_group04/proto"
 )
 
 type ClientRPC interface {
-	SendPing(ctx context.Context, me contact.Contact, target string) (*contact.Contact, error)
-	SendFindNode(ctx context.Context, me contact.Contact, candidateAddress string, targetID kademliaid.KademliaID) ([]contact.Contact, error)
-	SendFindValue(ctx context.Context, me, target contact.Contact, hash string) ([]contact.Contact, string, error)
+	SendPing(ctx context.Context, targetIpWithPort string) (*contact.Contact, error)
+	SendFindNode(ctx context.Context, contactWeRequest, contactWeAreSearchingFor *contact.Contact) ([]*contact.Contact, error)
+	SendFindValue(ctx context.Context, contactWeRequest *contact.Contact, hash string) ([]*contact.Contact, string, error)
 	SendStore(ctx context.Context, data string) error
 }
 
