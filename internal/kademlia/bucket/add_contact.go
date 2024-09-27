@@ -1,14 +1,17 @@
 package bucket
 
 import (
+	"context"
+	"d7024e_group04/env"
 	"d7024e_group04/internal/kademlia/contact"
+	"d7024e_group04/internal/network"
 )
 
 // AddContact adds the Contact to the front of the bucket
 // or moves it to the front of the bucket if it already existed
 
 // TODO: Split up into multiple check functions and test them isolated
-func (bucket *Bucket) AddContact(newContact *contact.Contact) {
+func (bucket *Bucket) AddContact(newContact *contact.Contact, client network.ClientRPC) {
 
 	// Is the new contact already stored in the list?
 	// Paper: "If the sending node already exists in the recipient’s k-bucket,
@@ -32,11 +35,12 @@ func (bucket *Bucket) AddContact(newContact *contact.Contact) {
 
 	// Ping least-recently (head)
 	head := bucket.list.Front()
-	// TODO: ping
 
-	// Responded
-	if true {
-		// TODO: Check if list is not empty, should not be possible with a BucketSize > 0
+	ctx, cancel := context.WithTimeout(context.Background(), env.RPCTimeout)
+	_, err := client.SendPing(ctx, head.Value.(*contact.Contact).Address)
+	cancel() // prevent context leaks
+
+	if err == nil {
 		bucket.list.MoveToBack(head)
 		// discard new contact
 		return
