@@ -67,10 +67,10 @@ func (c *Client) SendPing(ctx context.Context, me *contact.Contact, target strin
 	return &contact, nil
 }
 
-func (c *Client) SendFindNode(ctx context.Context, me, target *contact.Contact) ([]contact.Contact, error) {
-	conn, err := c.NewConnection(target.Address)
+func (c *Client) SendFindNode(ctx context.Context, me *contact.Contact, candidate string, targetId kademliaid.KademliaID) ([]contact.Contact, error) {
+	conn, err := c.NewConnection(candidate)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create connection to address: %v, err: %v", target.Address, err)
+		return nil, fmt.Errorf("failed to create connection to address: %v, err: %v", candidate, err)
 	}
 
 	defer conn.Close()
@@ -78,13 +78,13 @@ func (c *Client) SendFindNode(ctx context.Context, me, target *contact.Contact) 
 	grpc := pb.NewKademliaClient(conn)
 
 	payload := &pb.FindNodeRequest{
-		TargetID:       target.ID.Bytes(),
+		TargetID:       targetId.Bytes(),
 		RequestingNode: &pb.Node{ID: me.ID.Bytes(), IPWithPort: me.Address},
 	}
 
 	resp, err := grpc.FindNode(ctx, payload)
 	if err != nil {
-		return nil, fmt.Errorf("failed to send FIND_NODE RPC to address: %v, err: %v", target.Address, err)
+		return nil, fmt.Errorf("failed to send FIND_NODE RPC to address: %v, err: %v", candidate, err)
 	}
 
 	contacts := make([]contact.Contact, 0, len(resp.Nodes))
