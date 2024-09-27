@@ -2,39 +2,86 @@ package client
 
 import (
 	"context"
+	"d7024e_group04/internal/kademlia/contact"
 	"d7024e_group04/internal/kademlia/kademliaid"
 	pb "d7024e_group04/proto"
+	"fmt"
+	"log"
+	"net"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/test/bufconn"
 )
 
-type mockGrpcClient struct {
-	id      kademliaid.KademliaID
-	address string
-	store   map[string]string
+const bufSize = 1024 * 1024
+const mockServerAddress = "passthrough://bufnet"
+
+var lis *bufconn.Listener
+
+type mockGrpcServer struct {
+	pb.UnimplementedKademliaServer
+	ServerContact *contact.Contact
+	RoutingTable  []*contact.Contact
+	DataStore     map[string]string
 }
 
-func (m *mockGrpcClient) Ping(ctx context.Context, in *pb.Node, opts ...grpc.CallOption) (*pb.Node, error) {
-	return &pb.Node{ID: m.id.Bytes(), IPWithPort: m.address}, nil
+func bufDialer(context.Context, string) (net.Conn, error) {
+	return lis.Dial()
 }
 
-func (m *mockGrpcClient) FindNode(ctx context.Context, in *pb.FindNodeRequest, opts ...grpc.CallOption) (*pb.FindNodeResult, error) {
-	panic("TODO")
-}
-
-func (m *mockGrpcClient) FindValue(ctx context.Context, in *pb.FindValueRequest, opts ...grpc.CallOption) (*pb.FindValueResult, error) {
-	panic("TODO")
-}
-
-func (m *mockGrpcClient) Store(ctx context.Context, in *pb.StoreRequest, opts ...grpc.CallOption) (*pb.StoreResult, error) {
-	m.store[string(in.Key)] = in.Value
-	return &pb.StoreResult{Success: true}, nil
-}
-
-func newMockGrpcClient(id kademliaid.KademliaID, address string) *mockGrpcClient {
-	return &mockGrpcClient{
-		id:      id,
-		address: address,
-		store:   make(map[string]string),
+func startMockGrpcServer(id kademliaid.KademliaID, address string) *mockGrpcServer {
+	server := &mockGrpcServer{
+		ServerContact: contact.NewContact(id, address),
+		DataStore:     make(map[string]string),
 	}
+
+	lis = bufconn.Listen(bufSize)
+	s := grpc.NewServer()
+	pb.RegisterKademliaServer(s, server)
+
+	go func() {
+		if err := s.Serve(lis); err != nil {
+			log.Fatalf("Server exited with error: %v", err)
+		}
+	}()
+
+	return server
+}
+
+func (m *mockGrpcServer) Ping(ctx context.Context, in *pb.Node) (*pb.Node, error) {
+	return &pb.Node{ID: m.ServerContact.ID.Bytes(), IPWithPort: m.ServerContact.Address}, nil
+}
+
+func (m *mockGrpcServer) FindNode(ctx context.Context, in *pb.FindNodeRequest) (*pb.FindNodeResult, error) {
+	nodes := make([]*pb.Node, 0, len(m.RoutingTable))
+
+	for _, contact := range m.RoutingTable {
+		nodes = append(nodes, &pb.Node{ID: contact.ID.Bytes(), IPWithPort: contact.Address})
+	}
+
+	return &pb.FindNodeResult{Nodes: nodes}, nil
+}
+
+func (m *mockGrpcServer) FindValue(ctx context.Context, in *pb.FindValueRequest) (*pb.FindValueResult, error) {
+	value, found := m.DataStore[string(in.Hash)]
+	if found {
+		return &pb.FindValueResult{Value: &pb.FindValueResult_Data{Data: value}}, nil
+	}
+
+	return &pb.FindValueResult{Value: &pb.FindValueResult_Nodes{Nodes: &pb.FindNodeResult{}}}, nil
+}
+
+func (m *mockGrpcServer) Store(ctx context.Context, in *pb.StoreRequest) (*pb.StoreResult, error) {
+	panic("TODO")
+}
+
+func (m *mockGrpcServer) fillRoutingTable(count int) (contacts []*contact.Contact) {
+	for i := range count {
+		id := kademliaid.NewRandomKademliaID()
+		address := fmt.Sprintf("server %v", i)
+
+		contacts = append(contacts, contact.NewContact(id, address))
+	}
+	m.RoutingTable = contacts
+	return
 }

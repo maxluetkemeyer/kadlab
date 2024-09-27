@@ -31,7 +31,7 @@ func NewRoutingTable(me *contact.Contact) *RoutingTable {
 }
 
 // AddContact add a new contact to the correct Bucket
-func (routingTable *RoutingTable) AddContact(contact contact.Contact) {
+func (routingTable *RoutingTable) AddContact(contact *contact.Contact) {
 	routingTable.mut.Lock()
 	defer routingTable.mut.Unlock()
 
@@ -41,8 +41,8 @@ func (routingTable *RoutingTable) AddContact(contact contact.Contact) {
 }
 
 // FindClosestContacts finds the 'count' closest Contacts to the target in the RoutingTable
-func (routingTable *RoutingTable) FindClosestContacts(target kademliaid.KademliaID, count int, blacklist ...kademliaid.KademliaID) []contact.Contact {
-	candidates := make([]contact.Contact, 0)
+func (routingTable *RoutingTable) FindClosestContacts(target kademliaid.KademliaID, count int, blacklist ...kademliaid.KademliaID) []*contact.Contact {
+	candidates := make([]*contact.Contact, 0)
 	// Find in which bucket the target should be
 	routingTable.mut.RLock()
 	bucketIndex := routingTable.getBucketIndex(target)
@@ -69,7 +69,7 @@ func (routingTable *RoutingTable) FindClosestContacts(target kademliaid.Kademlia
 
 	routingTable.mut.RUnlock()
 
-	contact.SortContacts(&candidates)
+	contact.SortContacts(candidates)
 
 	// Maybe we have too little
 	if count > len(candidates) {

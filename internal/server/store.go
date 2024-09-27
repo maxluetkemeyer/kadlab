@@ -14,7 +14,7 @@ func (s *Server) Store(ctx context.Context, content *pb.StoreRequest) (*pb.Store
 
 	// TODO kademliaidfrombytes
 	senderID := (kademliaid.KademliaID)(content.RequestingNode.ID)
-	senderContact := *contact.NewContact(senderID, content.RequestingNode.IPWithPort)
+	senderContact := contact.NewContact(senderID, content.RequestingNode.IPWithPort)
 	s.routingTable.AddContact(senderContact)
 
 	key := content.Key
