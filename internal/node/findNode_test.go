@@ -3,6 +3,7 @@ package node
 import (
 	"context"
 	"fmt"
+	"os"
 	"testing"
 	"time"
 
@@ -88,7 +89,7 @@ func populateTestNodes() map[string]*TestNode {
 	return testNodes
 }
 
-type ClientMock struct{
+type ClientMock struct {
 	testNodes map[string]*TestNode
 }
 
@@ -116,6 +117,8 @@ func (c *ClientMock) SendStore(ctx context.Context, data string) error {
 }
 
 func TestFindNode(t *testing.T) {
+	// Simplify testing
+	env.BucketSize = 4
 	testNodes := populateTestNodes()
 
 	t.Run("findNode", func(t *testing.T) {
@@ -125,12 +128,11 @@ func TestFindNode(t *testing.T) {
 		// We are 18
 		node := Node{
 			RoutingTable: testNodes[":18"].routingTable,
-			Client: newClientMock(testNodes),
+			Client:       newClientMock(testNodes),
 		}
 
 		// Trying to find 13
 		nodesFound := node.findNode(ctx, thirteen)
-
 
 		// Expecting 5,12,13,15
 		t.Logf("nodes found = %v", nodesFound)
