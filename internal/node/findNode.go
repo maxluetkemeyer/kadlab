@@ -17,7 +17,6 @@ type kClosestList struct {
 }
 
 func (n *Node) findNode(rootCtx context.Context, target *contact.Contact) []contact.Contact {
-	log.Println("FINDING NODES")
 	alpha := env.Alpha
 	k := env.BucketSize
 	visitedSet := contact.NewContactSet()

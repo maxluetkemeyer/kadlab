@@ -3,7 +3,6 @@ package node
 import (
 	"context"
 	"fmt"
-	"os"
 	"testing"
 	"time"
 
@@ -135,7 +134,8 @@ func TestFindNode(t *testing.T) {
 		nodesFound := node.findNode(ctx, thirteen)
 
 		// Expecting 5,12,13,15
-		t.Logf("nodes found = %v", nodesFound)
+		fmt.Printf("nodes found = %v", nodesFound)
+		t.Error("unimplemented")
 	})
 
 }
