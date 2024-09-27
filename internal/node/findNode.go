@@ -74,6 +74,10 @@ func (n *Node) findNode(rootCtx context.Context, target *contact.Contact) []*con
 
 				// TODO refactor ifs
 				// TODO BUG: FIX DUPLICATE NODES!!!
+				if kClosets.Has(contact) {
+					continue
+				}
+
 				if len(kClosets.list) < k {
 					kClosets.list = append(kClosets.list, contact)
 					kClosets.sort()
@@ -96,6 +100,15 @@ func (n *Node) findNode(rootCtx context.Context, target *contact.Contact) []*con
 			return kClosets.list
 		}
 	}
+}
+
+func (kClosestList *kClosestList) Has(targetContact *contact.Contact) bool {
+	for _, c := range kClosestList.list {
+		if c.ID.Equals(targetContact.ID) {
+			return true
+		}
+	}
+	return false
 }
 
 func (kClosestList *kClosestList) isSubset(set *contact.ContactSet) bool {

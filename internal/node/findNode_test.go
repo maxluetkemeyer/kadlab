@@ -3,6 +3,7 @@ package node
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"testing"
 	"time"
 
@@ -123,6 +124,8 @@ func TestFindNode(t *testing.T) {
 	testNodes := populateTestNodes()
 
 	t.Run("findNode", func(t *testing.T) {
+		expectedNodes := []*contact.Contact{thirteen, twelve, fifteen, five}
+
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
@@ -135,9 +138,10 @@ func TestFindNode(t *testing.T) {
 		// Trying to find 13
 		nodesFound := node.findNode(ctx, thirteen)
 
-		// Expecting 5,12,13,15
-		fmt.Printf("nodes found = %v", nodesFound)
-		t.Error("unimplemented")
+		// Expecting 13,12,15,5
+		if !reflect.DeepEqual(expectedNodes, nodesFound) {
+			t.Fatalf("wrong nodes in response, expected: %v, got: %v", expectedNodes, nodesFound)
+		}
 	})
 
 }
