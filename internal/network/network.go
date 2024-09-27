@@ -2,6 +2,7 @@ package network
 
 import (
 	"context"
+
 	"d7024e_group04/internal/kademlia/contact"
 	pb "d7024e_group04/proto"
 )

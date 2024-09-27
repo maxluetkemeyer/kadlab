@@ -11,10 +11,10 @@ func (bucket *Bucket) GetContactAndCalcDistance(targetId kademliaid.KademliaID) 
 	var contactsWithDistances []*contact.Contact
 
 	for contactElement := bucket.list.Front(); contactElement != nil; contactElement = contactElement.Next() {
-		contactFromList := contactElement.Value.(*contact.Contact) // use generics with list
+		contactFromList := *contactElement.Value.(*contact.Contact) // use generics with list
 		contactFromList.CalcDistance(targetId)
 
-		contactsWithDistances = append(contactsWithDistances, contactFromList) // slices are immutable
+		contactsWithDistances = append(contactsWithDistances, &contactFromList) // slices are immutable
 	}
 
 	return contactsWithDistances
