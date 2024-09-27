@@ -139,7 +139,7 @@ func TestFindNode(t *testing.T) {
 
 		// Expecting 13,12,15,5
 		if len(nodesFound) != len(expectedNodes) {
-			t.Fatalf("wrong number of nodes, expected %v, got %v", len(expectedNodes), len(nodesFound))
+			t.Fatalf("wrong number of nodes, expected %v, got %v", expectedNodes, nodesFound)
 		}
 
 		for i, node := range nodesFound {

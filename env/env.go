@@ -11,7 +11,7 @@ const IDLength = 20 // The static number of bytes in a KademliaID. 160 / 8 = 20
 
 var ApiPort = 8080
 var Port = 50051
-var BucketSize = 20
+var BucketSize = 20 // must be larger than 0
 var NodesProxyDomain = "kademlianodes"
 var Alpha = 3 // degree of parallelism
 var RPCTimeout = 5 * time.Second
@@ -45,6 +45,11 @@ func init() {
 		if err == nil {
 			BucketSize = bucketSizeInt
 		}
+
+		if bucketSizeInt <= 0 {
+			log.Fatalf("invalid bucket size: %v", bucketSize)
+		}
+
 	}
 
 	if nodesProxyDomain != "" {
