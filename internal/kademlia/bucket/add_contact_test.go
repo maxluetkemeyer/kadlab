@@ -11,37 +11,37 @@ func TestAddContact(t *testing.T) {
 	cases := []struct {
 		Name        string
 		Bucket      *Bucket
-		Contacts    []contact.Contact
+		Contacts    []*contact.Contact
 		ExpectedLen int
 	}{
 		{"One single contact",
 			NewBucket(20),
-			[]contact.Contact{
-				*contact.NewContact(kademliaid.NewRandomKademliaID(), ""),
+			[]*contact.Contact{
+				contact.NewContact(kademliaid.NewRandomKademliaID(), ""),
 			},
 			1,
 		},
 		{"Two different contacts",
 			NewBucket(20),
-			[]contact.Contact{
-				*contact.NewContact(kademliaid.NewKademliaID("1111111100000000000000000000000000000000"), ""),
-				*contact.NewContact(kademliaid.NewKademliaID("1111111100000000000000000000000000000001"), ""),
+			[]*contact.Contact{
+				contact.NewContact(kademliaid.NewKademliaID("1111111100000000000000000000000000000000"), ""),
+				contact.NewContact(kademliaid.NewKademliaID("1111111100000000000000000000000000000001"), ""),
 			},
 			2,
 		},
 		{"Two similar contacts",
 			NewBucket(20),
-			[]contact.Contact{
-				*contact.NewContact(kademliaid.NewKademliaID("1111111100000000000000000000000000000000"), ""),
-				*contact.NewContact(kademliaid.NewKademliaID("1111111100000000000000000000000000000000"), ""),
+			[]*contact.Contact{
+				contact.NewContact(kademliaid.NewKademliaID("1111111100000000000000000000000000000000"), ""),
+				contact.NewContact(kademliaid.NewKademliaID("1111111100000000000000000000000000000000"), ""),
 			},
 			1,
 		},
 		{"Bucket is full, two different contacts",
 			NewBucket(1),
-			[]contact.Contact{
-				*contact.NewContact(kademliaid.NewKademliaID("1111111100000000000000000000000000000000"), ""),
-				*contact.NewContact(kademliaid.NewKademliaID("1111111100000000000000000000000000000002"), ""),
+			[]*contact.Contact{
+				contact.NewContact(kademliaid.NewKademliaID("1111111100000000000000000000000000000000"), ""),
+				contact.NewContact(kademliaid.NewKademliaID("1111111100000000000000000000000000000002"), ""),
 			},
 			1,
 		},
@@ -67,7 +67,7 @@ func TestAddContact(t *testing.T) {
 	// Don't delete, this tests AddContact, the other ones test AddContactCustom
 	t.Run("Bucket length should have increased after insertion a new unknown contact", func(t *testing.T) {
 		bucket := NewBucket(20)
-		contact0 := *contact.NewContact(kademliaid.NewRandomKademliaID(), "")
+		contact0 := contact.NewContact(kademliaid.NewRandomKademliaID(), "")
 
 		bucket.AddContact(contact0)
 

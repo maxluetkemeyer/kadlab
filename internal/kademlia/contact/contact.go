@@ -42,9 +42,9 @@ func (contact *Contact) String() string {
 	return fmt.Sprintf(`contact("%s", "%s")`, contact.ID, contact.Address)
 }
 
-func SortContacts(contacts *[]Contact) {
-	slices.SortStableFunc(*contacts, func(a, b Contact) int {
-		if a.Less(&b) {
+func SortContacts(contacts []*Contact) {
+	slices.SortStableFunc(contacts, func(a, b *Contact) int {
+		if a.Less(b) {
 			return -1
 		} else {
 			return 1
@@ -52,7 +52,7 @@ func SortContacts(contacts *[]Contact) {
 	})
 }
 
-func RemoveID(contacts []Contact, id kademliaid.KademliaID) (contactsWithoutId []Contact) {
+func RemoveID(contacts []*Contact, id kademliaid.KademliaID) (contactsWithoutId []*Contact) {
 	for idx, contact := range contacts {
 		if contact.ID.Equals(id) {
 			return append(contacts[:idx], contacts[idx+1:]...)

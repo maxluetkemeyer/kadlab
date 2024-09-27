@@ -12,20 +12,20 @@ import (
 
 type kClosestList struct {
 	mut     sync.RWMutex
-	list    []contact.Contact
+	list    []*contact.Contact
 	updated bool
 }
 
-func (n *Node) findNode(rootCtx context.Context, target *contact.Contact) []contact.Contact {
+func (n *Node) findNode(rootCtx context.Context, target *contact.Contact) []*contact.Contact {
+	log.Println("FINDING NODES")
 	alpha := env.Alpha
 	k := env.BucketSize
 	visitedSet := contact.NewContactSet()
-	me := n.RoutingTable.Me()
 	kClosets := kClosestList{}
 
 	wg := new(sync.WaitGroup)
 
-	var responseContactChannel chan []contact.Contact
+	var responseContactChannel chan []*contact.Contact
 
 	kClosets.list = n.RoutingTable.FindClosestContacts(target.ID, k)
 
@@ -34,7 +34,7 @@ func (n *Node) findNode(rootCtx context.Context, target *contact.Contact) []cont
 
 		// get kClosest that are unvisited
 		// TODO fix, tried to use contact.candidates but did not work. find some nicer way
-		var candidates []contact.Contact
+		var candidates []*contact.Contact
 		for _, closeContact := range kClosets.list {
 			if !visitedSet.Has(closeContact) {
 				candidates = append(candidates, closeContact)
@@ -44,14 +44,14 @@ func (n *Node) findNode(rootCtx context.Context, target *contact.Contact) []cont
 
 		// Goroutines, strict parallelism
 		ctx, cancel := context.WithTimeout(rootCtx, env.RPCTimeout)
-		responseContactChannel = make(chan []contact.Contact, k*alpha) // TODO look at size
+		responseContactChannel = make(chan []*contact.Contact, k*alpha) // TODO look at size
 		for i := 0; i < alpha && i < len(candidates); i++ {
 			wg.Add(1)
 			visitedSet.Add(candidates[i])
 
 			go func() {
 				defer wg.Done()
-				contacts, err := n.Client.SendFindNode(ctx, me, candidates[i].Address, target.ID)
+				contacts, err := n.Client.SendFindNode(ctx, candidates[i], target)
 
 				if err != nil {
 					kClosets.remove(candidates[i])
@@ -73,12 +73,13 @@ func (n *Node) findNode(rootCtx context.Context, target *contact.Contact) []cont
 				contact.CalcDistance(target.ID)
 
 				// TODO refactor ifs
+				// TODO BUG: FIX DUPLICATE NODES!!!
 				if len(kClosets.list) < k {
 					kClosets.list = append(kClosets.list, contact)
 					kClosets.sort()
 					kClosets.updated = true
 				} else {
-					if contact.Less(&kClosets.list[k-1]) {
+					if contact.Less(kClosets.list[k-1]) {
 						kClosets.list[k-1] = contact
 						kClosets.sort()
 						kClosets.updated = true
@@ -109,8 +110,8 @@ func (kClosestList *kClosestList) isSubset(set *contact.ContactSet) bool {
 func (kClosestList *kClosestList) sort() {
 	kClosestList.mut.Lock()
 	defer kClosestList.mut.Unlock()
-	slices.SortStableFunc(kClosestList.list, func(a, b contact.Contact) int {
-		if a.Less(&b) {
+	slices.SortStableFunc(kClosestList.list, func(a, b *contact.Contact) int {
+		if a.Less(b) {
 			return -1
 		} else {
 			return 1
@@ -119,11 +120,11 @@ func (kClosestList *kClosestList) sort() {
 }
 
 // TODO make good
-func (kClosestList *kClosestList) remove(target contact.Contact) {
+func (kClosestList *kClosestList) remove(target *contact.Contact) {
 	kClosestList.mut.Lock()
 	defer kClosestList.mut.Unlock()
 
-	var contactList []contact.Contact
+	var contactList []*contact.Contact
 
 	for _, contact := range kClosestList.list {
 		if !contact.ID.Equals(target.ID) {

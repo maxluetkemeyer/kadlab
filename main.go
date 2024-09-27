@@ -32,7 +32,7 @@ func main() {
 	me := createOwnContact()
 	routingTable := routingtable.NewRoutingTable(me)
 	memoryStore := store.NewMemoryStore()
-	client := client.NewClient()
+	client := client.NewClient(me)
 	kNetwork := &network.PublicNetwork{}
 	node := node.New(client, routingTable, memoryStore, kNetwork)
 
@@ -83,7 +83,7 @@ func startAPI(errGroup *errgroup.Group, errCtx context.Context, node *node.Node)
 func startCLI(errGroup *errgroup.Group, errCtx context.Context, cancelCtx context.CancelFunc, node *node.Node) {
 	errGroup.Go(func() error {
 		log.Println("STARTING CLI")
-		return cli.InputLoop(errCtx, cancelCtx, os.Stdin, node)
+		return cli.InputLoop(errCtx, cancelCtx, node)
 	})
 }
 
