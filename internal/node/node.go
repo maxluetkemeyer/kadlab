@@ -82,10 +82,9 @@ func (n *Node) GetObject(rootCtx context.Context, hash string) (data string, err
 }
 
 // Ping each contact in <contacts> until one responeses and returns it.
-// TODO: add concurrency
-func (n *Node) pingIPsAndGetContact(ctx context.Context, targetIps []string) (*contact.Contact, error) {
-	for _, targetIp := range targetIps {
-		contact, err := n.Client.SendPing(ctx, targetIp+":50051") // TODO fix this port
+func (n *Node) pingIPsAndGetContact(ctx context.Context, targetIPs []string) (*contact.Contact, error) {
+	for _, targetIP := range targetIPs {
+		contact, err := n.Client.SendPing(ctx, fmt.Sprintf("%v:%v", targetIP, env.Port))
 		if err == nil {
 			return contact, nil
 		}
