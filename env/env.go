@@ -2,6 +2,7 @@ package env
 
 import (
 	"log"
+	"log/slog"
 	"os"
 	"strconv"
 	"time"
@@ -15,6 +16,8 @@ var BucketSize = 20 // must be larger than 0
 var NodesProxyDomain = "kademlianodes"
 var Alpha = 3 // degree of parallelism
 var RPCTimeout = 5 * time.Second
+var BootstrapTimeout = 10 * time.Second
+var Debug = true
 
 func init() {
 	log.Println("Initialize environment variables")
@@ -70,4 +73,7 @@ func init() {
 		}
 	}
 
+	if Debug {
+		slog.SetLogLoggerLevel(slog.LevelDebug)
+	}
 }
