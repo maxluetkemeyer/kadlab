@@ -42,6 +42,7 @@ func (contact *Contact) String() string {
 	return fmt.Sprintf(`contact("%s", "%s")`, contact.ID, contact.Address)
 }
 
+// SortContacts sorts a slice of contacts
 func SortContacts(contacts []*Contact) {
 	slices.SortStableFunc(contacts, func(a, b *Contact) int {
 		if a.Less(b) {
@@ -52,6 +53,7 @@ func SortContacts(contacts []*Contact) {
 	})
 }
 
+// RemoveID filters a slice of contact and removes any instance of a contact with matching id.
 func RemoveID(contacts []*Contact, id kademliaid.KademliaID) (contactsWithoutId []*Contact) {
 	for idx, contact := range contacts {
 		if contact.ID.Equals(id) {
