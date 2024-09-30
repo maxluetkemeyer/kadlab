@@ -196,28 +196,45 @@ func TestServer_Store(t *testing.T) {
 	data := "some data"
 	key := kademliaid.NewKademliaIDFromData(data)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	go TimeoutContext(ctx, cancel)
+	t.Run("store valid data", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		go TimeoutContext(ctx, cancel)
 
-	result, err := srv.Store(ctx,
-		&pb.StoreRequest{
-			Key:            key.Bytes(),
-			Value:          data,
-			RequestingNode: &pb.Node{ID: SenderID.Bytes(), IPWithPort: SenderAddress}})
+		result, err := srv.Store(ctx,
+			&pb.StoreRequest{
+				Key:            key.Bytes(),
+				Value:          data,
+				RequestingNode: &pb.Node{ID: SenderID.Bytes(), IPWithPort: SenderAddress}})
 
-	if err != nil || !result.Success {
-		t.Fatalf("rpc Store failed, %v", err)
-	}
+		if err != nil || !result.Success {
+			t.Fatalf("rpc Store failed, %v", err)
+		}
 
-	dataFromServer, err := srv.store.GetValue(string(key.Bytes()))
+		dataFromServer, err := srv.store.GetValue(string(key.Bytes()))
 
-	if err != nil {
-		t.Fatalf("GetValue failed, %v", err)
-	}
+		if err != nil {
+			t.Fatalf("GetValue failed, %v", err)
+		}
 
-	if dataFromServer != data {
-		t.Fatalf("server stored wrong data, expected %v, got %v", data, dataFromServer)
-	}
+		if dataFromServer != data {
+			t.Fatalf("server stored wrong data, expected %v, got %v", data, dataFromServer)
+		}
+	})
+
+	t.Run("store invalid data", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		go TimeoutContext(ctx, cancel)
+
+		result, err := srv.Store(ctx,
+			&pb.StoreRequest{
+				Key:            nil,
+				Value:          "",
+				RequestingNode: &pb.Node{ID: SenderID.Bytes(), IPWithPort: SenderAddress}})
+
+		if err == nil || result.Success {
+			t.Fatalf("rpc Store should have failed")
+		}
+	})
 
 }
 
