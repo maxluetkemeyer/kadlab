@@ -8,12 +8,11 @@ import (
 	"log"
 )
 
-// TODO: Input validation, Tests
+// TODO: Input validation
 func (s *Server) Store(ctx context.Context, content *pb.StoreRequest) (*pb.StoreResult, error) {
 	log.Print("received store rpc")
 
-	// TODO kademliaidfrombytes
-	senderID := (kademliaid.KademliaID)(content.RequestingNode.ID)
+	senderID := kademliaid.NewKademliaIDFromBytes([20]byte(content.RequestingNode.ID))
 	senderContact := contact.NewContact(senderID, content.RequestingNode.IPWithPort)
 	s.routingTable.AddContact(senderContact)
 

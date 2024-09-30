@@ -77,12 +77,11 @@ func (s *Server) Ping(ctx context.Context, sender *pb.Node) (*pb.Node, error) {
 }
 
 func (s *Server) FindNode(ctx context.Context, request *pb.FindNodeRequest) (*pb.FindNodeResult, error) {
-	// TODO change to func NewKademliaIDFromBytes
-	targetID := (kademliaid.KademliaID)(request.TargetID)
-	senderID := (kademliaid.KademliaID)(request.RequestingNode.ID)
-	candidates := s.routingTable.FindClosestContacts(targetID, env.BucketSize, senderID)
+	targetNodeID := kademliaid.NewKademliaIDFromBytes([20]byte(request.TargetID))
+	requestingNodeID := kademliaid.NewKademliaIDFromBytes([20]byte(request.RequestingNode.ID))
+	candidates := s.routingTable.FindClosestContacts(targetNodeID, env.BucketSize, requestingNodeID)
 
-	senderContact := contact.NewContact(senderID, request.RequestingNode.IPWithPort)
+	senderContact := contact.NewContact(requestingNodeID, request.RequestingNode.IPWithPort)
 	s.routingTable.AddContact(senderContact)
 
 	nodes := make([]*pb.Node, 0, len(candidates))
