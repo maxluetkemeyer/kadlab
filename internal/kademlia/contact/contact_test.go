@@ -18,16 +18,16 @@ func TestContact_CalcDistance(t *testing.T) {
 
 	contact0.CalcDistance(id1)
 
-	if contact0.distance.String() != distance {
-		t.Fatalf("wrong distance, got %v, expected %v", contact0.distance.String(), distance)
+	if contact0.Distance.String() != distance {
+		t.Fatalf("wrong distance, got %v, expected %v", contact0.Distance.String(), distance)
 	}
 }
 
 func TestContact_Less(t *testing.T) {
 	distance0 := kademliaid.NewKademliaID("0000000000000000000000000000000000000000")
 	distance1 := kademliaid.NewKademliaID("0000000000000000000000000000000000000001")
-	contact0 := &Contact{distance: distance0}
-	contact1 := &Contact{distance: distance1}
+	contact0 := &Contact{Distance: distance0}
+	contact1 := &Contact{Distance: distance1}
 
 	if !contact0.Less(contact1) {
 		t.Fatalf("expected contact0 to be less than contact1")
@@ -65,7 +65,7 @@ func TestContact_SortContacts(t *testing.T) {
 	SortContacts(contacts)
 
 	if !reflect.DeepEqual(contacts, contactsSorted) {
-		t.Fatalf("did not sort correctly\ngot %v\nexpected %v", contacts[0].distance.Bytes(), contactsSorted[0].distance.Bytes())
+		t.Fatalf("did not sort correctly\ngot %v\nexpected %v", contacts[0].Distance.Bytes(), contactsSorted[0].Distance.Bytes())
 	}
 }
 
@@ -87,7 +87,7 @@ func createContactSlice(count int) (contacts []*Contact) {
 	for i := range count {
 		contact := &Contact{
 			ID:       kademliaid.NewKademliaIDFromData(strconv.Itoa(i)),
-			distance: [env.IDLength]byte{byte(i)},
+			Distance: [env.IDLength]byte{byte(i)},
 		}
 		contacts = append(contacts, contact)
 	}
