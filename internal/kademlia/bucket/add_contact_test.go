@@ -3,6 +3,7 @@ package bucket
 import (
 	"d7024e_group04/internal/kademlia/contact"
 	"d7024e_group04/internal/kademlia/kademliaid"
+	"d7024e_group04/mock"
 	"testing"
 )
 
@@ -48,11 +49,14 @@ func TestAddContact(t *testing.T) {
 		// TODO: Add test cases for non-responding nodes
 	}
 
+	client := mock.NewClientMock(nil)
+	client.SetPingResult(true)
+
 	for _, test := range cases {
 		t.Run(test.Name, func(t *testing.T) {
 
 			for _, myContact := range test.Contacts {
-				test.Bucket.AddContact(myContact)
+				test.Bucket.AddContact(myContact, client)
 			}
 
 			got := test.Bucket.Len()
@@ -69,13 +73,36 @@ func TestAddContact(t *testing.T) {
 		bucket := NewBucket(20)
 		contact0 := contact.NewContact(kademliaid.NewRandomKademliaID(), "")
 
-		bucket.AddContact(contact0)
+		bucket.AddContact(contact0, client)
 
 		want := 1
 		got := bucket.list.Len()
 
 		if got != want {
 			t.Errorf("got %d, want %d", got, want)
+		}
+	})
+
+	t.Run("ping fails", func(t *testing.T) {
+		bucket := NewBucket(2)
+
+		contact0 := contact.NewContact(kademliaid.NewRandomKademliaID(), "0")
+		contact1 := contact.NewContact(kademliaid.NewRandomKademliaID(), "1")
+		contact2 := contact.NewContact(kademliaid.NewRandomKademliaID(), "2")
+
+		bucket.AddContact(contact0, client)
+		bucket.AddContact(contact1, client)
+
+		front := bucket.list.Front()
+
+		client.SetPingResult(false)
+
+		bucket.AddContact(contact2, client)
+
+		frontAfterFailedPing := bucket.list.Front()
+
+		if front == frontAfterFailedPing {
+			t.Fatal("did not remove head when ping failed")
 		}
 	})
 }

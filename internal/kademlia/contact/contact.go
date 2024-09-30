@@ -13,7 +13,7 @@ import (
 type Contact struct {
 	ID       kademliaid.KademliaID
 	Address  string
-	distance kademliaid.KademliaID
+	Distance kademliaid.KademliaID
 }
 
 // NewContact returns a new instance of a Contact
@@ -25,7 +25,7 @@ func NewContact(id kademliaid.KademliaID, address string) *Contact {
 // fills the contacts distance field
 // TODO: target should be a contact
 func (contact *Contact) CalcDistance(target kademliaid.KademliaID) {
-	contact.distance = contact.ID.CalcDistance(target)
+	contact.Distance = contact.ID.CalcDistance(target)
 }
 
 // Less returns true if contact.distance < otherContact.distance
@@ -33,7 +33,7 @@ func (contact *Contact) CalcDistance(target kademliaid.KademliaID) {
 // We just compare distances here
 // TODO: It implements the comparable interface or smth like this, for sorting
 func (contact *Contact) Less(otherContact *Contact) bool {
-	return contact.distance.Less(otherContact.distance)
+	return contact.Distance.Less(otherContact.Distance)
 }
 
 // String returns a simple string representation of a Contact

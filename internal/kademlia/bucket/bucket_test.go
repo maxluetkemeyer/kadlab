@@ -3,10 +3,14 @@ package bucket
 import (
 	"d7024e_group04/internal/kademlia/contact"
 	"d7024e_group04/internal/kademlia/kademliaid"
+	"d7024e_group04/mock"
 	"testing"
 )
 
 func TestBucket(t *testing.T) {
+	client := mock.NewClientMock(nil)
+	client.SetPingResult(true)
+
 	t.Run("New Bucket should be empty", func(t *testing.T) {
 		bucket := NewBucket(20)
 
@@ -25,9 +29,9 @@ func TestBucket(t *testing.T) {
 		contact1 := contact.NewContact(kademliaid.NewKademliaID("1111111200000000000000000000000000000000"), "")
 		contact2 := contact.NewContact(kademliaid.NewKademliaID("1111111300000000000000000000000000000000"), "")
 
-		bucket.AddContact(contact0)
-		bucket.AddContact(contact1)
-		bucket.AddContact(contact2)
+		bucket.AddContact(contact0, client)
+		bucket.AddContact(contact1, client)
+		bucket.AddContact(contact2, client)
 
 		want := 3
 		got := bucket.Len()
