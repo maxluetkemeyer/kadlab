@@ -1,4 +1,4 @@
-package client
+package mock
 
 import (
 	"context"
@@ -13,10 +13,10 @@ import (
 	"google.golang.org/grpc/test/bufconn"
 )
 
-const bufSize = 1024 * 1024
-const mockServerAddress = "passthrough://bufnet"
+const BufSize = 1024 * 1024
+const MockServerAddress = "passthrough://bufnet"
 
-var lis *bufconn.Listener
+var Lis *bufconn.Listener
 
 type mockGrpcServer struct {
 	pb.UnimplementedKademliaServer
@@ -25,22 +25,22 @@ type mockGrpcServer struct {
 	DataStore     map[string]string
 }
 
-func bufDialer(context.Context, string) (net.Conn, error) {
-	return lis.Dial()
+func BufDialer(context.Context, string) (net.Conn, error) {
+	return Lis.Dial()
 }
 
-func startMockGrpcServer(id kademliaid.KademliaID, address string) *mockGrpcServer {
+func StartMockGrpcServer(id kademliaid.KademliaID, address string) *mockGrpcServer {
 	server := &mockGrpcServer{
 		ServerContact: contact.NewContact(id, address),
 		DataStore:     make(map[string]string),
 	}
 
-	lis = bufconn.Listen(bufSize)
+	Lis = bufconn.Listen(BufSize)
 	s := grpc.NewServer()
 	pb.RegisterKademliaServer(s, server)
 
 	go func() {
-		if err := s.Serve(lis); err != nil {
+		if err := s.Serve(Lis); err != nil {
 			log.Fatalf("Server exited with error: %v", err)
 		}
 	}()
@@ -75,7 +75,7 @@ func (m *mockGrpcServer) Store(ctx context.Context, in *pb.StoreRequest) (*pb.St
 	panic("TODO")
 }
 
-func (m *mockGrpcServer) fillRoutingTable(count int) (contacts []*contact.Contact) {
+func (m *mockGrpcServer) FillRoutingTable(count int) (contacts []*contact.Contact) {
 	for i := range count {
 		id := kademliaid.NewRandomKademliaID()
 		address := fmt.Sprintf("server %v", i)

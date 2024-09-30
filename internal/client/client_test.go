@@ -5,6 +5,7 @@ import (
 	"d7024e_group04/env"
 	"d7024e_group04/internal/kademlia/contact"
 	"d7024e_group04/internal/kademlia/kademliaid"
+	"d7024e_group04/mock"
 	"reflect"
 	"testing"
 	"time"
@@ -21,15 +22,15 @@ var (
 )
 
 func TestClient_SendPing(t *testing.T) {
-	startMockGrpcServer(serverID, serverAddress)
+	mock.StartMockGrpcServer(serverID, serverAddress)
 
 	clientContact := contact.NewContact(clientID, clientAddress)
-	client := NewClient(clientContact, grpc.WithContextDialer(bufDialer))
+	client := NewClient(clientContact, grpc.WithContextDialer(mock.BufDialer))
 
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	go TimeoutContext(ctx, cancel)
 
-	resp, err := client.SendPing(ctx, mockServerAddress)
+	resp, err := client.SendPing(ctx, mock.MockServerAddress)
 
 	if err != nil {
 		t.Fatalf("failed to ping, %v", err)
@@ -45,13 +46,13 @@ func TestClient_SendPing(t *testing.T) {
 }
 
 func TestClient_SendFindNode(t *testing.T) {
-	server := startMockGrpcServer(serverID, serverAddress)
-	serverContact := contact.NewContact(serverID, mockServerAddress)
+	server := mock.StartMockGrpcServer(serverID, serverAddress)
+	serverContact := contact.NewContact(serverID, mock.MockServerAddress)
 
 	clientContact := contact.NewContact(clientID, clientAddress)
-	client := NewClient(clientContact, grpc.WithContextDialer(bufDialer))
+	client := NewClient(clientContact, grpc.WithContextDialer(mock.BufDialer))
 
-	contacts := server.fillRoutingTable(env.BucketSize)
+	contacts := server.FillRoutingTable(env.BucketSize)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	go TimeoutContext(ctx, cancel)
@@ -71,10 +72,10 @@ func TestClient_SendFindNode(t *testing.T) {
 }
 
 func TestClient_SendFindValue(t *testing.T) {
-	server := startMockGrpcServer(serverID, serverAddress)
+	server := mock.StartMockGrpcServer(serverID, serverAddress)
 
 	clientContact := contact.NewContact(clientID, clientAddress)
-	client := NewClient(clientContact, grpc.WithContextDialer(bufDialer))
+	client := NewClient(clientContact, grpc.WithContextDialer(mock.BufDialer))
 
 	t.Run("Data exists on node", func(t *testing.T) {
 		value := "some_value"
@@ -84,7 +85,7 @@ func TestClient_SendFindValue(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 		go TimeoutContext(ctx, cancel)
 
-		targetNode := contact.NewContact(serverID, mockServerAddress)
+		targetNode := contact.NewContact(serverID, mock.MockServerAddress)
 		candidates, data, err := client.SendFindValue(ctx, targetNode, value)
 		if err != nil {
 			t.Fatalf("failed to send find value request, %v", err)
@@ -103,7 +104,7 @@ func TestClient_SendFindValue(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 		go TimeoutContext(ctx, cancel)
 
-		targetNode := contact.NewContact(serverID, mockServerAddress)
+		targetNode := contact.NewContact(serverID, mock.MockServerAddress)
 		candidates, data, err := client.SendFindValue(ctx, targetNode, "non-existent")
 		if err != nil {
 			t.Fatalf("failed to send find value request, %v", err)
