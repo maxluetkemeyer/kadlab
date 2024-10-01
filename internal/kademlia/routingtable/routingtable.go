@@ -2,9 +2,11 @@ package routingtable
 
 import (
 	"d7024e_group04/env"
+	"d7024e_group04/internal/client"
 	"d7024e_group04/internal/kademlia/bucket"
 	"d7024e_group04/internal/kademlia/contact"
 	"d7024e_group04/internal/kademlia/kademliaid"
+	"d7024e_group04/internal/network"
 	"sync"
 )
 
@@ -15,18 +17,20 @@ import (
 type RoutingTable struct {
 	mut     sync.RWMutex
 	me      *contact.Contact
+	client  network.ClientRPC
 	buckets [env.IDLength * 8]*bucket.Bucket
 }
 
 // NewRoutingTable returns a new instance of a RoutingTable
 func NewRoutingTable(me *contact.Contact) *RoutingTable {
 	// ignore err for now, we set this in runtime
-
-	routingTable := &RoutingTable{}
+	routingTable := &RoutingTable{
+		me:     me,
+		client: client.NewClient(me),
+	}
 	for i := 0; i < env.IDLength*8; i++ {
 		routingTable.buckets[i] = bucket.NewBucket(env.BucketSize)
 	}
-	routingTable.me = me
 	return routingTable
 }
 
@@ -37,7 +41,7 @@ func (routingTable *RoutingTable) AddContact(contact *contact.Contact) {
 
 	bucketIndex := routingTable.getBucketIndex(contact.ID)
 	bucket := routingTable.buckets[bucketIndex]
-	bucket.AddContact(contact)
+	bucket.AddContact(contact, routingTable.client)
 }
 
 // FindClosestContacts finds the 'count' closest Contacts to the target in the RoutingTable
