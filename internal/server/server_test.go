@@ -126,6 +126,118 @@ func TestServer_FindNode(t *testing.T) {
 	})
 }
 
+func TestServer_FindValue(t *testing.T) {
+	srv := initServer()
+	data := "some data"
+	hash := kademliaid.NewKademliaIDFromData(data)
+
+	t.Run("value does not exist", func(t *testing.T) {
+		request := &pb.FindValueRequest{
+			Hash:           hash.Bytes(),
+			RequestingNode: &pb.Node{ID: SenderID.Bytes(), IPWithPort: SenderAddress},
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		go TimeoutContext(ctx, cancel)
+
+		result, err := srv.FindValue(ctx, request)
+
+		if err != nil {
+			t.Fatalf("rpc FindValue failed, %v", err)
+		}
+
+		switch result.Value.(type) {
+		case *pb.FindValueResult_Data:
+			t.Fatalf("got data in result, %v", result)
+
+		case *pb.FindValueResult_Nodes:
+			break
+
+		default:
+			t.Fatalf("response type invalid, resp: %v", result)
+		}
+	})
+
+	t.Run("value exists", func(t *testing.T) {
+		srv.store.SetValue(string(hash.Bytes()), data)
+
+		request := &pb.FindValueRequest{
+			Hash:           hash.Bytes(),
+			RequestingNode: &pb.Node{ID: SenderID.Bytes(), IPWithPort: SenderAddress},
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		go TimeoutContext(ctx, cancel)
+
+		result, err := srv.FindValue(ctx, request)
+
+		if err != nil {
+			t.Fatalf("rpc FindValue failed, %v", err)
+		}
+
+		switch resultValue := result.Value.(type) {
+		case *pb.FindValueResult_Data:
+			if resultValue.Data != data {
+				t.Fatalf("wrong data returned, expected %v, got %v", data, resultValue.Data)
+			}
+
+		case *pb.FindValueResult_Nodes:
+			t.Fatalf("could not find data, result, %v", result)
+
+		default:
+			t.Fatalf("response type invalid, resp: %v", result)
+		}
+	})
+}
+
+func TestServer_Store(t *testing.T) {
+	srv := initServer()
+
+	data := "some data"
+	key := kademliaid.NewKademliaIDFromData(data)
+
+	t.Run("store valid data", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		go TimeoutContext(ctx, cancel)
+
+		result, err := srv.Store(ctx,
+			&pb.StoreRequest{
+				Key:            key.Bytes(),
+				Value:          data,
+				RequestingNode: &pb.Node{ID: SenderID.Bytes(), IPWithPort: SenderAddress}})
+
+		if err != nil || !result.Success {
+			t.Fatalf("rpc Store failed, %v", err)
+		}
+
+		dataFromServer, err := srv.store.GetValue(string(key.Bytes()))
+
+		if err != nil {
+			t.Fatalf("GetValue failed, %v", err)
+		}
+
+		if dataFromServer != data {
+			t.Fatalf("server stored wrong data, expected %v, got %v", data, dataFromServer)
+		}
+	})
+
+	t.Run("store invalid data", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		go TimeoutContext(ctx, cancel)
+
+		result, err := srv.Store(ctx,
+			&pb.StoreRequest{
+				Key:            nil,
+				Value:          "",
+				RequestingNode: &pb.Node{ID: SenderID.Bytes(), IPWithPort: SenderAddress}})
+
+		if err == nil || result.Success {
+			t.Fatalf("rpc Store should have failed")
+		}
+	})
+
+}
+
 func fillRoutingTable(count int, routingTable *routingtable.RoutingTable, blacklist kademliaid.KademliaID) {
 	var kID kademliaid.KademliaID
 
