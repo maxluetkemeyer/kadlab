@@ -113,7 +113,7 @@ func (c *ClientMock) SendFindValue(ctx context.Context, contactWeRequest *contac
 	return nil, "", fmt.Errorf("should not be used")
 }
 
-func (c *ClientMock) SendStore(ctx context.Context, data string) error {
+func (c *ClientMock) SendStore(ctx context.Context, contactWeRequest *contact.Contact, data string) error {
 	return fmt.Errorf("should not be used")
 }
 

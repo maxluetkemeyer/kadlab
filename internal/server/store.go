@@ -10,7 +10,6 @@ import (
 	"log"
 )
 
-// TODO: Input validation
 func (s *Server) Store(ctx context.Context, content *pb.StoreRequest) (*pb.StoreResult, error) {
 	log.Print("received store rpc")
 
