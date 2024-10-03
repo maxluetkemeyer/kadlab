@@ -27,7 +27,7 @@ func init() {
 	nodesProxyDomain := os.Getenv("NODES_PROXY_DOMAIN")
 	alpha := os.Getenv("ALPHA")
 	rpcTimeoutInSeconds := os.Getenv("RPC_TIMEOUT_IN_SECONDS")
-	_, debug := os.LookupEnv("debug")
+	_, debug := os.LookupEnv("DEBUG")
 
 	if port != "" {
 		portInt, err := strconv.Atoi(port)

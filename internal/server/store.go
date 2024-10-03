@@ -6,6 +6,7 @@ import (
 	"d7024e_group04/internal/kademlia/contact"
 	"d7024e_group04/internal/kademlia/kademliaid"
 	pb "d7024e_group04/proto"
+	"encoding/hex"
 	"fmt"
 	"log"
 )
@@ -27,7 +28,8 @@ func (s *Server) Store(ctx context.Context, content *pb.StoreRequest) (*pb.Store
 			fmt.Errorf("invalid content: %v", content)
 	}
 
-	s.store.SetValue(string(key), value)
+	hexKey := hex.EncodeToString(key)
+	s.store.SetValue(hexKey, value)
 
 	return &pb.StoreResult{
 		Success: true,
