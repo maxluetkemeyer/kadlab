@@ -132,8 +132,29 @@ func (c *Client) SendFindValue(ctx context.Context, contactWeRequest *contact.Co
 	}
 }
 
-func (c *Client) SendStore(ctx context.Context, data string) error {
-	panic("TODO")
+func (c *Client) SendStore(ctx context.Context, contactWeRequest *contact.Contact, data string) error {
+	conn, kademliaClient, err := c.connectTo(contactWeRequest.Address)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	// key is hash of data
+	key := kademliaid.NewKademliaIDFromData(data)
+
+	storeRequest := &pb.StoreRequest{
+		Key:            key.Bytes(),
+		Value:          data,
+		RequestingNode: contactToPbNode(c.me),
+	}
+
+	storeResult, err := kademliaClient.Store(ctx, storeRequest)
+
+	if err != nil || !storeResult.Success {
+		return err
+	}
+
+	return nil
 }
 
 func pbNodeToContact(node *pb.Node) *contact.Contact {
