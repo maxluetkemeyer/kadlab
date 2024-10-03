@@ -44,8 +44,12 @@ func cliLogic(ctx context.Context, cancelCtx context.CancelFunc, errChan chan er
 	command := strings.Fields(strings.TrimSpace(input))
 	switch command[0] {
 	case "put":
-		node.PutObject()
-		panic("TODO")
+		hash, err := node.PutObject(ctx, command[1])
+		if err != nil {
+			fmt.Println(err)
+		} else {
+			fmt.Println(hash)
+		}
 	case "get":
 		hash := command[1]
 		if hash == "" {

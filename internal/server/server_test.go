@@ -210,7 +210,7 @@ func TestServer_Store(t *testing.T) {
 			t.Fatalf("rpc Store failed, %v", err)
 		}
 
-		dataFromServer, err := srv.store.GetValue(string(key.Bytes()))
+		dataFromServer, err := srv.store.GetValue(key.String())
 
 		if err != nil {
 			t.Fatalf("GetValue failed, %v", err)

@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"sync"
 	"time"
 
 	"d7024e_group04/env"
 	"d7024e_group04/internal/kademlia/contact"
+	"d7024e_group04/internal/kademlia/kademliaid"
 	"d7024e_group04/internal/kademlia/routingtable"
 	"d7024e_group04/internal/network"
 	"d7024e_group04/internal/store"
@@ -87,8 +89,36 @@ func (n *Node) Bootstrap(rootCtx context.Context) error {
 }
 
 // Put takes content of the file and outputs the hash of the object
-func (n *Node) PutObject() {
-	panic("TODO")
+// This is the Kademlia store operation. The initiating node does an iterativeFindNode, collecting a set of k closest contacts, and then sends a primitive STORE RPC to each.
+func (n *Node) PutObject(ctx context.Context, data string) (hashAsHex string, err error) {
+	hash := kademliaid.NewKademliaIDFromData(data)
+	storeContact := contact.NewContact(hash, "")
+
+	storeCandidates := n.findNode(ctx, storeContact)
+
+	wg := new(sync.WaitGroup)
+	errChan := make(chan error, env.BucketSize)
+
+	for _, contact := range storeCandidates {
+		wg.Add(1)
+
+		go func() {
+			defer wg.Done()
+			err := n.Client.SendStore(ctx, contact, data)
+			if err != nil {
+				errChan <- err
+			}
+		}()
+	}
+
+	wg.Wait()
+	close(errChan)
+
+	for err := range errChan {
+		slog.Warn("SendStore error", slog.Any("err", err))
+	}
+
+	return hash.String(), nil
 }
 
 // Get takes hash and outputs the contents of the object and the node it was retrieved
