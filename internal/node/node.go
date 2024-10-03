@@ -43,7 +43,7 @@ func (n *Node) Bootstrap(rootCtx context.Context) error {
 	ctx, cancel := context.WithTimeout(rootCtx, env.BootstrapTimeout)
 	for {
 		if ctx.Err() != nil {
-			cancel() // Only to make the linter happy
+			defer cancel()
 			return ctx.Err()
 		}
 
