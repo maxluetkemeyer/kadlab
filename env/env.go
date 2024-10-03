@@ -15,6 +15,7 @@ var BucketSize = 20 // must be larger than 0
 var NodesProxyDomain = "kademlianodes"
 var Alpha = 3 // degree of parallelism
 var RPCTimeout = 5 * time.Second
+var TTLinSeconds = 60 * 60 * time.Second
 
 func init() {
 	log.Println("Initialize environment variables")
@@ -25,6 +26,7 @@ func init() {
 	nodesProxyDomain := os.Getenv("NODES_PROXY_DOMAIN")
 	alpha := os.Getenv("ALPHA")
 	rpcTimeoutInSeconds := os.Getenv("RPC_TIMEOUT_IN_SECONDS")
+	ttlInSeconds := os.Getenv("TTLinSeconds")
 
 	if port != "" {
 		portInt, err := strconv.Atoi(port)
@@ -68,6 +70,14 @@ func init() {
 		if err == nil {
 			RPCTimeout = time.Duration(rpcTimeoutInt) * time.Second
 		}
+	}
+
+	if ttlInSeconds != "" {
+		ttlInSecondsInt, err := strconv.Atoi(ttlInSeconds)
+		if err != nil {
+			log.Fatalf("invalid ttl size: %v", ttlInSeconds)
+		}
+		TTLinSeconds := ttlInSecondsInt * time.Second
 	}
 
 }

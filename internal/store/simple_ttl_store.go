@@ -23,6 +23,7 @@ func (s *SimpleTTLStore) SetValue(key string, value string, ttl time.Duration) {
 	s.SetTTL(key, ttl)
 }
 
+// Does not reset the TTL!
 func (s *SimpleTTLStore) GetValue(key string) (value string, error error) {
 	if !s.isValid(key) {
 		return "", fmt.Errorf("invalid key (too old or not stored)")
