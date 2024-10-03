@@ -61,14 +61,13 @@ func (n *Node) Bootstrap(rootCtx context.Context) error {
 		logger.Debug("pinging")
 
 		recipient, err = n.pingIPsAndGetContact(ctx, ips)
-		if err != nil {
-			logger.Warn("Unable to ping any ip", slog.Any("err", err))
-			slog.Warn("Retrying bootstrap in 100 milis")
-			time.Sleep(100 * time.Millisecond)
-			continue
+		if err == nil {
+			break
 		}
 
-		break
+		logger.Warn("Unable to ping any ip", slog.Any("err", err))
+		slog.Warn("Retrying bootstrap in 100 milis")
+		time.Sleep(100 * time.Millisecond)
 	}
 
 	cancel()
