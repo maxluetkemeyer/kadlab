@@ -50,6 +50,7 @@ func (n *Node) Bootstrap(rootCtx context.Context) error {
 		ips, err := n.kNet.ResolveDNS(env.NodesProxyDomain)
 		if err != nil {
 			logger.Warn("Unable to resolve DNS", slog.Any("domain", env.NodesProxyDomain))
+			time.Sleep(100 * time.Millisecond)
 			continue
 		}
 
