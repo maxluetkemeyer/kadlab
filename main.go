@@ -3,6 +3,13 @@ package main
 
 import (
 	"context"
+	"log"
+	"net"
+	"os"
+	"os/signal"
+	"strconv"
+	"syscall"
+
 	"d7024e_group04/api"
 	"d7024e_group04/cli"
 	"d7024e_group04/env"
@@ -14,13 +21,6 @@ import (
 	"d7024e_group04/internal/node"
 	"d7024e_group04/internal/server"
 	"d7024e_group04/internal/store"
-	"log"
-	"net"
-	"os"
-	"os/signal"
-	"strconv"
-	"syscall"
-	"time"
 
 	"golang.org/x/sync/errgroup"
 )
@@ -53,7 +53,7 @@ func createOwnContact() (me *contact.Contact) {
 	}
 	ip, err := net.LookupIP(host)
 	if err != nil {
-		panic("bad ip")
+		log.Fatalf("Invalid IP: %v", ip)
 	}
 
 	ipWithPort := ip[0].String() + ":" + strconv.Itoa(env.Port)
@@ -88,12 +88,7 @@ func startCLI(errGroup *errgroup.Group, errCtx context.Context, cancelCtx contex
 }
 
 func startBootstrapping(errGroup *errgroup.Group, errCtx context.Context, node *node.Node) {
-	delayTime := 5 * time.Second
-
 	errGroup.Go(func() error {
-		log.Printf("STARTING BOOTSTRAP after delay of %v seconds", delayTime)
-		time.Sleep(delayTime)
-
 		err := node.Bootstrap(errCtx)
 		if err != nil {
 			log.Fatalf("BOOTSTRAP failed: %v\n", err)

@@ -3,7 +3,8 @@ package node
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
+	"time"
 
 	"d7024e_group04/env"
 	"d7024e_group04/internal/kademlia/contact"
@@ -35,38 +36,52 @@ func New(client network.ClientRPC, routingTable *routingtable.RoutingTable, stor
  3. it does an iterativeFindNode for n
  4. it refreshes all buckets further away than its closest neighbor, which will be in the occupied bucket with the lowest index.
 */
-func (n *Node) Bootstrap(ctx context.Context) error {
-	addresses, err := n.kNet.ResolveDNS(env.NodesProxyDomain)
-	if err != nil {
-		return err
-	}
+func (n *Node) Bootstrap(rootCtx context.Context) error {
+	var recipient *contact.Contact
 
-	ourIP := n.RoutingTable.Me().Address
+	logger := slog.Default().With("me", n.RoutingTable.Me().Address)
+	ctx, cancel := context.WithTimeout(rootCtx, env.BootstrapTimeout)
+	for {
+		if ctx.Err() != nil {
+			defer cancel()
+			return ctx.Err()
+		}
 
-	for idx, address := range addresses {
-		if address == ourIP[:len(ourIP)-6] {
-			addresses = append(addresses[:idx], addresses[idx+1:]...)
+		ips, err := n.kNet.ResolveDNS(env.NodesProxyDomain)
+		if err != nil {
+			logger.Warn("Unable to resolve DNS", slog.Any("domain", env.NodesProxyDomain))
+			time.Sleep(100 * time.Millisecond)
+			continue
+		}
+
+		ourAddress := n.RoutingTable.Me().Address
+		ips = removeAddress(ips, ourAddress)
+
+		logger := logger.With(slog.Any("ips", ips))
+
+		logger.Debug("pinging")
+
+		recipient, err = n.pingIPsAndGetContact(ctx, ips)
+		if err == nil {
 			break
 		}
+
+		logger.Warn("Unable to ping any ip", slog.Any("err", err))
+		slog.Warn("Retrying bootstrap in 100 milis")
+		time.Sleep(100 * time.Millisecond)
 	}
 
-	log.Printf("addresses:%v\n", addresses)
+	cancel()
 
-	contact, err := n.pingIPsAndGetContact(ctx, addresses)
-	if err != nil {
-		return err
-	}
-
-	n.RoutingTable.AddContact(contact)
+	n.RoutingTable.AddContact(recipient)
 	// TODO: iterative search, should we update once for the list or for each node visited in findNode?
 	me := n.RoutingTable.Me()
-	closestContacts := n.findNode(ctx, me)
+	closestContacts := n.findNode(rootCtx, me)
 	for _, contact := range closestContacts {
 		n.RoutingTable.AddContact(contact)
 	}
 
-	log.Println("FOUND NODES")
-	log.Print(closestContacts)
+	logger.Debug("FOUND NODES", slog.Any("nodes", closestContacts))
 
 	return nil
 }
@@ -91,4 +106,19 @@ func (n *Node) pingIPsAndGetContact(ctx context.Context, targetIPs []string) (*c
 	}
 
 	return nil, fmt.Errorf("unable to ping any contacts")
+}
+
+func removeAddress(ips []string, addressToRemove string) []string {
+	portLength := 5 + /* colon */ 1
+	ipToRemove := addressToRemove[:len(addressToRemove)-portLength]
+
+	for idx, ip := range ips {
+		if ip == ipToRemove {
+			// Remove the ip
+			ips = append(ips[:idx], ips[idx+1:]...)
+			break
+		}
+	}
+
+	return ips
 }
