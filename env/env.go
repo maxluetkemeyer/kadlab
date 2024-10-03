@@ -17,7 +17,6 @@ var NodesProxyDomain = "kademlianodes"
 var Alpha = 3 // degree of parallelism
 var RPCTimeout = 5 * time.Second
 var BootstrapTimeout = 10 * time.Second
-var Debug = true
 
 func init() {
 	log.Println("Initialize environment variables")
@@ -28,6 +27,7 @@ func init() {
 	nodesProxyDomain := os.Getenv("NODES_PROXY_DOMAIN")
 	alpha := os.Getenv("ALPHA")
 	rpcTimeoutInSeconds := os.Getenv("RPC_TIMEOUT_IN_SECONDS")
+	_, debug := os.LookupEnv("debug")
 
 	if port != "" {
 		portInt, err := strconv.Atoi(port)
@@ -73,7 +73,7 @@ func init() {
 		}
 	}
 
-	if Debug {
+	if debug {
 		slog.SetLogLoggerLevel(slog.LevelDebug)
 	}
 }
