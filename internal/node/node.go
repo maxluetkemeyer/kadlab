@@ -64,7 +64,7 @@ func (n *Node) Bootstrap(rootCtx context.Context) error {
 		if err != nil {
 			logger.Warn("Unable to ping any ip", slog.Any("err", err))
 			slog.Warn("Retrying bootstrap in 100 milis")
-			time.Sleep(100*time.Millisecond)
+			time.Sleep(100 * time.Millisecond)
 			continue
 		}
 
@@ -109,7 +109,8 @@ func (n *Node) pingIPsAndGetContact(ctx context.Context, targetIPs []string) (*c
 }
 
 func removeAddress(ips []string, addressToRemove string) []string {
-	ipToRemove := addressToRemove[:len(addressToRemove)-6]
+	portLength := 5 + /* colon */ 1
+	ipToRemove := addressToRemove[:len(addressToRemove)-portLength]
 
 	for idx, ip := range ips {
 		if ip == ipToRemove {
