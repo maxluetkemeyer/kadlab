@@ -17,7 +17,7 @@ func TestSet_Add(t *testing.T) {
 		t.Fatalf("wrong number of items in set, found %v, expected 1", len(set.m))
 	}
 
-	_, found := set.m[contact]
+	_, found := set.m[contact.ID]
 
 	if !found {
 		t.Fatalf("contact is not in set")
@@ -38,7 +38,7 @@ func TestSet_Adds(t *testing.T) {
 	}
 
 	for _, contact := range contacts {
-		_, found := set.m[contact]
+		_, found := set.m[contact.ID]
 		if !found {
 			t.Fatalf("contact is not in set")
 		}
@@ -55,7 +55,7 @@ func TestSet_Remove(t *testing.T) {
 		t.Fatalf("invalid number of items in set, got %v, expected %v", len(set.m), len(contacts))
 	}
 
-	_, found := set.m[contacts[0]]
+	_, found := set.m[contacts[0].ID]
 
 	if !found {
 		t.Fatalf("contact is not in set")
@@ -63,7 +63,7 @@ func TestSet_Remove(t *testing.T) {
 
 	set.Remove(contacts[0])
 
-	_, found = set.m[contacts[0]]
+	_, found = set.m[contacts[0].ID]
 
 	if found {
 		t.Fatalf("contact is still in set")
@@ -76,7 +76,7 @@ func TestSet_Has(t *testing.T) {
 
 	contacts := fillSet(set, 2)
 
-	_, found := set.m[contacts[0]]
+	_, found := set.m[contacts[0].ID]
 
 	if !found {
 		t.Fatalf("contact is not in set")
@@ -126,35 +126,11 @@ func TestSet_IsEmpty(t *testing.T) {
 	}
 }
 
-func TestSet_List(t *testing.T) {
-	set := NewContactSet()
-
-	contacts := fillSet(set, 3)
-
-	setContacts := set.List()
-
-	for _, setContact := range setContacts {
-		found := false
-
-		for _, contact := range contacts {
-			if setContact == contact {
-				found = true
-				break
-			}
-		}
-
-		if !found {
-			t.Fatalf("mismatching list, expected %v, got %v", contacts, setContacts)
-		}
-	}
-
-}
-
 func fillSet(set *ContactSet, count int) (contacts []*Contact) {
 	for i := range count {
 		contact := NewContact(kademliaid.NewRandomKademliaID(), fmt.Sprintf("address %v", i))
 		contacts = append(contacts, contact)
-		set.m[contact] = true
+		set.m[contact.ID] = true
 	}
 	return
 }
