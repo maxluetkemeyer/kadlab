@@ -26,6 +26,7 @@ import (
 
 type TestNode struct {
 	server       *server.Server
+	store        store.Store
 	contact      *contact.Contact
 	routingTable *routingtable.RoutingTable
 }
@@ -37,8 +38,11 @@ func newTestNode(me *contact.Contact, contacts []*contact.Contact) *TestNode {
 		routingTable.AddContact(c)
 	}
 
+	store := store.NewMemoryStore()
+
 	return &TestNode{
-		server:       server.NewServer(routingTable, store.NewMemoryStore()),
+		server:       server.NewServer(routingTable, store),
+		store:        store,
 		contact:      me,
 		routingTable: routingTable,
 	}
@@ -110,11 +114,22 @@ func (c *ClientMock) SendFindNode(ctx context.Context, contactWeRequest, contact
 }
 
 func (c *ClientMock) SendFindValue(ctx context.Context, contactWeRequest *contact.Contact, hash string) ([]*contact.Contact, string, error) {
-	return nil, "", fmt.Errorf("should not be used")
+	candidateNode := c.testNodes[contactWeRequest.Address]
+
+	value, err := candidateNode.store.GetValue(hash)
+	if err != nil {
+		hashKademliaID := kademliaid.NewKademliaID(hash)
+		return candidateNode.routingTable.FindClosestContacts(hashKademliaID, env.BucketSize), "", nil
+	}
+
+	return nil, value, nil
 }
 
 func (c *ClientMock) SendStore(ctx context.Context, contactWeRequest *contact.Contact, data string) error {
-	return fmt.Errorf("should not be used")
+	candidateNode := c.testNodes[contactWeRequest.Address]
+	key := kademliaid.NewKademliaIDFromData(data)
+	candidateNode.store.SetValue(key.String(), data)
+	return nil
 }
 
 func TestFindNode(t *testing.T) {

@@ -72,7 +72,7 @@ func startServer(errGroup *errgroup.Group, errCtx context.Context, routingTable 
 	})
 }
 
-func startAPI(errGroup *errgroup.Group, errCtx context.Context, node *node.Node) {
+func startAPI(errGroup *errgroup.Group, errCtx context.Context, node node.NodeHandler) {
 	var handler api.KademliaAPI = api.NewHandler(node)
 	errGroup.Go(func() error {
 		log.Println("STARTING API")
@@ -80,14 +80,14 @@ func startAPI(errGroup *errgroup.Group, errCtx context.Context, node *node.Node)
 	})
 }
 
-func startCLI(errGroup *errgroup.Group, errCtx context.Context, cancelCtx context.CancelFunc, node *node.Node) {
+func startCLI(errGroup *errgroup.Group, errCtx context.Context, cancelCtx context.CancelFunc, node node.NodeHandler) {
 	errGroup.Go(func() error {
 		log.Println("STARTING CLI")
 		return cli.InputLoop(errCtx, cancelCtx, node)
 	})
 }
 
-func startBootstrapping(errGroup *errgroup.Group, errCtx context.Context, node *node.Node) {
+func startBootstrapping(errGroup *errgroup.Group, errCtx context.Context, node node.NodeHandler) {
 	errGroup.Go(func() error {
 		err := node.Bootstrap(errCtx)
 		if err != nil {

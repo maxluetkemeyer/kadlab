@@ -3,6 +3,7 @@ package node
 import (
 	"context"
 	"fmt"
+	"log"
 	"log/slog"
 	"sync"
 	"time"
@@ -10,10 +11,18 @@ import (
 	"d7024e_group04/env"
 	"d7024e_group04/internal/kademlia/contact"
 	"d7024e_group04/internal/kademlia/kademliaid"
+	"d7024e_group04/internal/kademlia/model"
 	"d7024e_group04/internal/kademlia/routingtable"
 	"d7024e_group04/internal/network"
 	"d7024e_group04/internal/store"
 )
+
+type NodeHandler interface {
+	Me() *contact.Contact
+	Bootstrap(rootCtx context.Context) error
+	PutObject(ctx context.Context, data string) (hashAsHex string, err error)
+	GetObject(rootCtx context.Context, hash string) (valueObject *model.ValueObject, candidates []*contact.Contact, err error)
+}
 
 type Node struct {
 	Client       network.ClientRPC
@@ -29,6 +38,10 @@ func New(client network.ClientRPC, routingTable *routingtable.RoutingTable, stor
 		Store:        store,
 		kNet:         kNet,
 	}
+}
+
+func (n *Node) Me() *contact.Contact {
+	return n.RoutingTable.Me()
 }
 
 /*
@@ -122,8 +135,103 @@ func (n *Node) PutObject(ctx context.Context, data string) (hashAsHex string, er
 }
 
 // Get takes hash and outputs the contents of the object and the node it was retrieved
-func (n *Node) GetObject(rootCtx context.Context, hash string) (data string, err error) {
-	panic("TODO")
+func (n *Node) GetObject(rootCtx context.Context, hash string) (valueObject *model.ValueObject, candidates []*contact.Contact, err error) {
+	// check for value in our own store first
+	value, err := n.Store.GetValue(hash)
+
+	if err == nil {
+		return &model.ValueObject{value, n.RoutingTable.Me()}, nil, nil
+	}
+
+	// search the network
+	ctx, cancel := context.WithCancel(rootCtx)
+
+	valueChan := make(chan model.ValueObject)
+	candidateChan := make(chan []*contact.Contact, 1)
+
+	hashAsKademliaID := kademliaid.NewKademliaID(hash)
+	hashAsContact := contact.NewContact(hashAsKademliaID, "")
+
+	visitedSet := contact.NewContactSet()
+	kClosest := &kClosestList{}
+	kClosest.list = n.RoutingTable.FindClosestContacts(hashAsKademliaID, k)
+
+	go func() {
+		for {
+			responseContactChan := make(chan []*contact.Contact, alpha)
+			kClosest.updated = false
+			rpcCtx, cancel := context.WithTimeout(ctx, env.RPCTimeout)
+
+			// blocking call
+			n.runParallelFindValueRequest(rpcCtx, kClosest, visitedSet, hash, responseContactChan, valueChan)
+			cancel()
+
+			for contacts := range responseContactChan {
+				for _, contact := range contacts {
+					// don't add nodes that are already visited
+					if !visitedSet.Has(contact) {
+						kClosest.addContact(contact, hashAsContact)
+					}
+				}
+			}
+
+			if !kClosest.updated && kClosest.isSubset(visitedSet) {
+				candidateChan <- kClosest.list
+				return
+			}
+		}
+	}()
+	for {
+		select {
+		case <-rootCtx.Done():
+			cancel()
+			return nil, nil, rootCtx.Err()
+		case candidates := <-candidateChan:
+			cancel()
+			return nil, candidates, nil
+		case valueObject := <-valueChan:
+			cancel()
+			return &valueObject, nil, nil
+		}
+	}
+
+}
+
+func (n *Node) runParallelFindValueRequest(
+	ctx context.Context,
+	kClosest *kClosestList,
+	visitedSet *contact.ContactSet,
+	hash string,
+	responseContactChannel chan []*contact.Contact,
+	valueChan chan model.ValueObject) {
+
+	wg := new(sync.WaitGroup)
+	candidates := getCandidates(kClosest, visitedSet)
+
+	for i := 0; i < alpha && i < len(candidates); i++ {
+		wg.Add(1)
+		visitedSet.Add(candidates[i])
+
+		go func() {
+			defer wg.Done()
+			contacts, data, err := n.Client.SendFindValue(ctx, candidates[i], hash)
+
+			if err != nil {
+				kClosest.remove(candidates[i])
+				log.Printf("WARNING: client findNode error: %v", err)
+				return
+			}
+
+			if len(data) > 0 {
+				valueChan <- model.ValueObject{data, candidates[i]}
+				return
+			}
+
+			responseContactChannel <- contacts
+		}()
+	}
+	wg.Wait()
+	close(responseContactChannel)
 }
 
 // Ping each contact in <contacts> until one responeses and returns it.
