@@ -94,7 +94,7 @@ func (c *mockClient) SendPing(ctx context.Context, targetIpWithPort string) (*co
 }
 
 func (c *mockClient) SendFindNode(ctx context.Context, contactWeRequest, contactWeAreSearchingFor *contact.Contact) ([]*contact.Contact, error) {
-	if c.findNodeCountUntilFail != 0 && c.findNodeCountUntilFail != c.findNodeSuccesfulCount {
+	if c.findNodeCountUntilFail != 0 && c.findNodeSuccesfulCount >= c.findNodeCountUntilFail-1 {
 		c.findNodeSuccesfulCount = 0
 		return nil, fmt.Errorf("bad network (not a real error)")
 	} else {
