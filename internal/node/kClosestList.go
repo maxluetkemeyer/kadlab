@@ -71,15 +71,25 @@ func (kClosestList *kClosestList) addContact(contact *contact.Contact, reference
 	}
 
 	if len(kClosestList.list) < k {
+		kClosestList.mut.Lock()
 		kClosestList.list = append(kClosestList.list, contact)
+		kClosestList.mut.Unlock()
 		kClosestList.sort()
 		kClosestList.updated = true
 		return
 	}
 
 	if contact.Less(kClosestList.list[k-1]) {
+		kClosestList.mut.Lock()
 		kClosestList.list[k-1] = contact
+		kClosestList.mut.Unlock()
 		kClosestList.sort()
 		kClosestList.updated = true
 	}
+}
+
+func (kClosestList *kClosestList) List() []*contact.Contact {
+	kClosestList.mut.RLock()
+	defer kClosestList.mut.RUnlock()
+	return kClosestList.list
 }

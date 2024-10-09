@@ -140,7 +140,7 @@ func (n *Node) GetObject(rootCtx context.Context, hash string) (valueObject *mod
 	value, err := n.Store.GetValue(hash)
 
 	if err == nil {
-		return &model.ValueObject{value, n.RoutingTable.Me()}, nil, nil
+		return &model.ValueObject{DataValue: value, NodeWithValue: n.RoutingTable.Me()}, nil, nil
 	}
 
 	// search the network
@@ -156,7 +156,11 @@ func (n *Node) GetObject(rootCtx context.Context, hash string) (valueObject *mod
 	kClosest := &kClosestList{}
 	kClosest.list = n.RoutingTable.FindClosestContacts(hashAsKademliaID, k)
 
+	wg := new(sync.WaitGroup)
+	wg.Add(1)
+
 	go func() {
+		defer wg.Done()
 		for {
 			responseContactChan := make(chan []*contact.Contact, alpha)
 			kClosest.updated = false
@@ -181,6 +185,7 @@ func (n *Node) GetObject(rootCtx context.Context, hash string) (valueObject *mod
 			}
 		}
 	}()
+
 	for {
 		select {
 		case <-rootCtx.Done():
@@ -191,10 +196,38 @@ func (n *Node) GetObject(rootCtx context.Context, hash string) (valueObject *mod
 			return nil, candidates, nil
 		case valueObject := <-valueChan:
 			cancel()
+			wg.Wait()
+			n.storeAtClosestNode(rootCtx, kClosest, visitedSet, hash, valueObject.DataValue)
 			return &valueObject, nil, nil
 		}
 	}
 
+}
+
+// storeAtClosestNode stores the data in the closest node seen which does not have the data
+func (n *Node) storeAtClosestNode(rootCtx context.Context, kClosest *kClosestList, visitedSet *contact.ContactSet, hash, data string) {
+	candidates := kClosest.List()
+	for _, contact := range candidates {
+		if visitedSet.Has(contact) {
+			ctx, cancel := context.WithTimeout(rootCtx, env.RPCTimeout)
+			candidates, _, err := n.Client.SendFindValue(ctx, contact, hash)
+			cancel()
+
+			// data exists or node is down
+			if candidates == nil || err != nil {
+				continue
+			}
+
+			ctx, cancel = context.WithTimeout(rootCtx, env.RPCTimeout)
+			err = n.Client.SendStore(ctx, contact, data)
+			cancel()
+
+			if err == nil {
+				return
+			}
+
+		}
+	}
 }
 
 func (n *Node) runParallelFindValueRequest(
@@ -223,7 +256,7 @@ func (n *Node) runParallelFindValueRequest(
 			}
 
 			if len(data) > 0 {
-				valueChan <- model.ValueObject{data, candidates[i]}
+				valueChan <- model.ValueObject{DataValue: data, NodeWithValue: candidates[i]}
 				return
 			}
 
