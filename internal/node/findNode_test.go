@@ -77,15 +77,15 @@ func populateTestNodes() map[string]*TestNode {
 		one, four, five, twelve, thirteen,
 	})
 
-	testNodes[thirteen.Address] = newTestNode(one, []*contact.Contact{
+	testNodes[thirteen.Address] = newTestNode(thirteen, []*contact.Contact{
 		one, four, five, twelve, fifteen,
 	})
 
-	testNodes[fifteen.Address] = newTestNode(one, []*contact.Contact{
+	testNodes[fifteen.Address] = newTestNode(fifteen, []*contact.Contact{
 		one, four, five, twelve, thirteen,
 	})
 
-	testNodes[eighteen.Address] = newTestNode(one, []*contact.Contact{
+	testNodes[eighteen.Address] = newTestNode(eighteen, []*contact.Contact{
 		one, four, five,
 	})
 

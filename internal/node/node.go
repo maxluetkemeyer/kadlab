@@ -146,7 +146,7 @@ func (n *Node) GetObject(rootCtx context.Context, hash string) (valueObject *mod
 	// search the network
 	ctx, cancel := context.WithCancel(rootCtx)
 
-	valueChan := make(chan model.ValueObject)
+	valueChan := make(chan model.ValueObject, alpha)
 	candidateChan := make(chan []*contact.Contact, 1)
 
 	hashAsKademliaID := kademliaid.NewKademliaID(hash)
@@ -162,26 +162,32 @@ func (n *Node) GetObject(rootCtx context.Context, hash string) (valueObject *mod
 	go func() {
 		defer wg.Done()
 		for {
-			responseContactChan := make(chan []*contact.Contact, alpha)
-			kClosest.updated = false
-			rpcCtx, cancel := context.WithTimeout(ctx, env.RPCTimeout)
+			select {
+			case <-ctx.Done():
+				return
 
-			// blocking call
-			n.runParallelFindValueRequest(rpcCtx, kClosest, visitedSet, hash, responseContactChan, valueChan)
-			cancel()
+			default:
+				responseContactChan := make(chan []*contact.Contact, alpha)
+				kClosest.updated = false
+				rpcCtx, cancel := context.WithTimeout(ctx, env.RPCTimeout)
 
-			for contacts := range responseContactChan {
-				for _, contact := range contacts {
-					// don't add nodes that are already visited
-					if !visitedSet.Has(contact) {
-						kClosest.addContact(contact, hashAsContact)
+				// blocking call
+				n.runParallelFindValueRequest(rpcCtx, kClosest, visitedSet, hash, responseContactChan, valueChan)
+				cancel()
+
+				for contacts := range responseContactChan {
+					for _, contact := range contacts {
+						// don't add nodes that are already visited
+						if !visitedSet.Has(contact) {
+							kClosest.addContact(contact, hashAsContact)
+						}
 					}
 				}
-			}
 
-			if !kClosest.updated && kClosest.isSubset(visitedSet) {
-				candidateChan <- kClosest.list
-				return
+				if !kClosest.updated && kClosest.isSubset(visitedSet) {
+					candidateChan <- kClosest.list
+					return
+				}
 			}
 		}
 	}()
@@ -251,7 +257,7 @@ func (n *Node) runParallelFindValueRequest(
 
 			if err != nil {
 				kClosest.remove(candidates[i])
-				log.Printf("WARNING: client findNode error: %v", err)
+				log.Printf("WARNING: client findValue error: %v", err)
 				return
 			}
 

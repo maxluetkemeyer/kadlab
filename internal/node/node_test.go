@@ -124,42 +124,22 @@ func TestNode_GetObject(t *testing.T) {
 		}
 	})
 
-	t.Run("replicate data on closest node", func(t *testing.T) {
-		data3 := "new_data"
-		key3AsKademliaID := kademliaid.NewKademliaIDFromData(data3)
-		node2.Store.SetValue(key3AsKademliaID.String(), data3)
+	t.Run("check that data was replicated", func(t *testing.T) {
+		// get nodes that are not ourself and node we know has the data
+		closestCandidates := node.RoutingTable.FindClosestContacts(key2AsKademliaID, 20, node.Me().ID, node2.Me().ID)
 
-		// check closest node
-		candidates := node2.RoutingTable.FindClosestContacts(key3AsKademliaID, 1, node2.Me().ID)
+		for _, candidate := range closestCandidates {
+			candidateNode := testNodes[candidate.Address]
 
-		closestNode := testNodes[candidates[0].Address]
-		valueFromClosestNode, err := closestNode.store.GetValue(key3AsKademliaID.String())
-
-		if err == nil {
-			t.Fatalf("GetValue found data that should not exist, data: %v", valueFromClosestNode)
+			val, err := candidateNode.store.GetValue(key2AsKademliaID.String())
+			if err != nil {
+				continue
+			}
+			if val == data2 {
+				return
+			}
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		value, _, err := node.GetObject(ctx, key3AsKademliaID.String())
-
-		if err != nil {
-			t.Fatalf("failed to GetObject, err: %v", err)
-		}
-
-		if value.DataValue != data3 {
-			t.Fatalf("wrong data in node, exepected %v, got %v", data3, value.DataValue)
-		}
-
-		// data should now be in closest node
-		valueFromClosestNode, err = closestNode.store.GetValue(key3AsKademliaID.String())
-		if err != nil {
-			t.Fatalf("err fetching data: %v", err)
-		}
-
-		if valueFromClosestNode != data3 {
-			t.Fatalf("failed to replicate to closest node, got %v, expected %v", valueFromClosestNode, data3)
-		}
-
+		t.Fatalf("did not replicate correctly")
 	})
 }

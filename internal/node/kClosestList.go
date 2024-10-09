@@ -89,6 +89,7 @@ func (kClosestList *kClosestList) addContact(contact *contact.Contact, reference
 }
 
 func (kClosestList *kClosestList) List() []*contact.Contact {
+	kClosestList.sort()
 	kClosestList.mut.RLock()
 	defer kClosestList.mut.RUnlock()
 	return kClosestList.list
