@@ -3,6 +3,7 @@ package mock
 import (
 	"context"
 	"fmt"
+	"sync/atomic"
 
 	"d7024e_group04/env"
 	"d7024e_group04/internal/kademlia/contact"
@@ -22,7 +23,7 @@ type mockClient struct {
 	me                     *contact.Contact
 	pingSuccessful         bool
 	findNodeCountUntilFail int
-	findNodeSuccesfulCount int
+	findNodeSuccesfulCount atomic.Uint32
 	nodes                  map[string]*MockNode
 }
 
@@ -56,7 +57,7 @@ func NewClientMockWithNodes(nodeAddr string, nodes map[string]*MockNode) (*mockC
 		me:    n.contact,
 		nodes: nodes,
 		findNodeCountUntilFail: 0,
-		findNodeSuccesfulCount: 0,
+		findNodeSuccesfulCount: atomic.Uint32{},
 	}, nil
 }
 
@@ -94,11 +95,11 @@ func (c *mockClient) SendPing(ctx context.Context, targetIpWithPort string) (*co
 }
 
 func (c *mockClient) SendFindNode(ctx context.Context, contactWeRequest, contactWeAreSearchingFor *contact.Contact) ([]*contact.Contact, error) {
-	if c.findNodeCountUntilFail != 0 && c.findNodeSuccesfulCount >= c.findNodeCountUntilFail-1 {
-		c.findNodeSuccesfulCount = 0
+	if c.findNodeCountUntilFail != 0 && int(c.findNodeSuccesfulCount.Load()) >= c.findNodeCountUntilFail-1 {
+		c.findNodeSuccesfulCount.Store(0)
 		return nil, fmt.Errorf("bad network (not a real error)")
 	} else {
-		c.findNodeSuccesfulCount++
+		c.findNodeSuccesfulCount.Add(1)
 	}
 
 	candidateNode := c.nodes[contactWeRequest.Address]
