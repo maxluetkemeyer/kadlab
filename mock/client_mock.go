@@ -19,10 +19,11 @@ type MockNode struct {
 }
 
 type mockClient struct {
-	me                *contact.Contact
-	pingSuccessful    bool
-	findNodeSuccesful bool
-	nodes             map[string]*MockNode
+	me                     *contact.Contact
+	pingSuccessful         bool
+	findNodeCountUntilFail int
+	findNodeSuccesfulCount int
+	nodes                  map[string]*MockNode
 }
 
 func NewNodeMock(me *contact.Contact, contacts []*contact.Contact) *MockNode {
@@ -54,6 +55,8 @@ func NewClientMockWithNodes(nodeAddr string, nodes map[string]*MockNode) (*mockC
 	return &mockClient{
 		me:    n.contact,
 		nodes: nodes,
+		findNodeCountUntilFail: 0,
+		findNodeSuccesfulCount: 0,
 	}, nil
 }
 
@@ -61,8 +64,12 @@ func (c *mockClient) SetPingResult(result bool) {
 	c.pingSuccessful = result
 }
 
-func (c *mockClient) SetFindNodeResult(result bool) {
-	c.findNodeSuccesful = result
+// Set the number of requests that will success until one fails
+// Eg. Setting it to 1 will make all requests fail, while
+//     setting it to 3 will make 2 requests work and 1 fail.
+// Setting it to 0 will disable this feature
+func (c *mockClient) SetFindNodeSuccesfulCount(count int) {
+	c.findNodeCountUntilFail = count
 }
 
 func (c *mockClient) GetNode(nodeAddr string) (*node.Node, error) {
@@ -87,9 +94,13 @@ func (c *mockClient) SendPing(ctx context.Context, targetIpWithPort string) (*co
 }
 
 func (c *mockClient) SendFindNode(ctx context.Context, contactWeRequest, contactWeAreSearchingFor *contact.Contact) ([]*contact.Contact, error) {
-	if !c.findNodeSuccesful {
-		return nil, fmt.Errorf("findNodeSuccesful is false")
+	if c.findNodeCountUntilFail != 0 || c.findNodeCountUntilFail != c.findNodeSuccesfulCount {
+		c.findNodeSuccesfulCount = 0
+		return nil, fmt.Errorf("bad network (not a real error)")
+	} else {
+		c.findNodeSuccesfulCount++
 	}
+
 	candidateNode := c.nodes[contactWeRequest.Address]
 	return candidateNode.routingTable.FindClosestContacts(contactWeAreSearchingFor.ID, env.BucketSize), nil
 }
