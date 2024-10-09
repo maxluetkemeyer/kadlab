@@ -1,6 +1,7 @@
-package bucket
+package bucket_test
 
 import (
+	"d7024e_group04/internal/kademlia/bucket"
 	"d7024e_group04/internal/kademlia/contact"
 	"d7024e_group04/internal/kademlia/kademliaid"
 	"d7024e_group04/mock"
@@ -21,7 +22,7 @@ func TestBucket_GetContactAndCalcDistance(t *testing.T) {
 
 	targetContact := contact.NewContact(kademliaid.NewKademliaID("0000000000000000000000000000000000000011"), "2")
 
-	bucket := NewBucket(2)
+	bucket := bucket.NewBucket(2)
 	bucket.AddContact(contact0, client)
 	bucket.AddContact(contact1, client)
 
