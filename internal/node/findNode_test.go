@@ -124,7 +124,7 @@ func TestFindNode(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		client.SetFindNodeSuccesfulCount(3)
+		client.SetFindNodeSuccesfulCount(1)
 
 		// Trying to find 13
 		nodesFound := findNode(me, ctx, thirteen)
@@ -138,6 +138,32 @@ func TestFindNode(t *testing.T) {
 				t.Fatalf("wrong nodes, expected %v, got %v", expectedNodes, nodesFound)
 			}
 		}
+	})
+
+	t.Run("findNode with faulty network", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		// We are 18
+		client, err := mock.NewClientMockWithNodes(eighteen.Address, testNodes)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		me, err := client.GetNode(eighteen.Address)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		client.SetFindNodeSuccesfulCount(3)
+
+		// Trying to find 13
+		nodesFound := findNode(me, ctx, thirteen)
+
+		if len(nodesFound) < 3 {
+			t.Fatalf("wrong number of nodes, expected at least 3, got %v", nodesFound)
+		}
+
 	})
 
 }
