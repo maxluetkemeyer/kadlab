@@ -15,6 +15,6 @@ RUN echo "/go/bin/grpc-client-cli --proto /etc/proto/kademlia.proto \$@" >> /bin
 
 RUN chmod +x /bin/*
 
-EXPOSE 50051
+EXPOSE 50051 8080
 
 ENTRYPOINT [ "/kademlia/kademlia-node" ]
