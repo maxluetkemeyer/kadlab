@@ -58,7 +58,12 @@ func (n *Node) findNodeIteration(
 
 	// loop through responses and add to kClosest
 	for contacts := range responseContactChannel {
-		kClosest.addContacts(contacts, contactWeAreSearchingFor)
+		for _, contact := range contacts {
+			// don't add nodes that are already visited
+			if !visitedSet.Has(contact) {
+				kClosest.addContact(contact, contactWeAreSearchingFor)
+			}
+		}
 	}
 }
 
