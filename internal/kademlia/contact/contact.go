@@ -2,6 +2,7 @@ package contact
 
 import (
 	"d7024e_group04/internal/kademlia/kademliaid"
+	"encoding/json"
 	"fmt"
 	"slices"
 )
@@ -11,9 +12,19 @@ import (
 // 3-tuple mentioned in the paper
 // TODO: It is not like the paper <ip, udp port, node id>, but <id, address(ip+port), distance(maybe cached)>
 type Contact struct {
-	ID       kademliaid.KademliaID
-	Address  string
+	ID       kademliaid.KademliaID `json:"ID"`
+	Address  string                `json:"Address"`
 	Distance kademliaid.KademliaID
+}
+
+func (c *Contact) MarshalJSON() ([]byte, error) {
+	return json.Marshal(&struct {
+		ID      string
+		Address string
+	}{
+		ID:      c.ID.String(),
+		Address: c.Address,
+	})
 }
 
 // NewContact returns a new instance of a Contact

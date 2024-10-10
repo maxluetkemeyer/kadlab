@@ -48,8 +48,6 @@ func (h *Handler) ListenAndServe(ctx context.Context) error {
 
 func (h *Handler) getObject() func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("http get req, %v", h.node.Me())
-
 		hash := r.PathValue("hash")
 		// check if hex value
 		_, err := hex.DecodeString(hash)
@@ -58,31 +56,21 @@ func (h *Handler) getObject() func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		log.Println("request sent")
-
 		ctx, cancel := context.WithTimeout(r.Context(), env.RPCTimeout)
 		value, candidates, err := h.node.GetObject(ctx, hash)
 		cancel()
 
-		log.Println("request done")
-
 		if err != nil {
-			log.Println("err")
-
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
 		if value != nil {
-			log.Println("value")
-
 			json.NewEncoder(w).Encode(value)
 			return
 		}
 
 		if candidates != nil {
-			log.Println("candidate")
-
 			w.WriteHeader(http.StatusNotFound)
 			json.NewEncoder(w).Encode(candidates)
 		}
@@ -92,7 +80,6 @@ func (h *Handler) getObject() func(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) putObject() func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("http post req, %v", h.node.Me())
 
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
