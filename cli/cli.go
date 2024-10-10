@@ -89,9 +89,13 @@ func getCommand(ctx context.Context, node node.NodeHandler, hash string) (string
 		return fmt.Sprintf("value: %v, found in node: %v", val.DataValue, val.NodeWithValue), nil
 	}
 
-	str := "could not find value, closest contacts are:"
-	for _, contact := range candidates {
-		str += fmt.Sprintln(contact)
+	if candidates != nil {
+		str := "could not find value, closest contacts are:"
+		for _, contact := range candidates {
+			str += fmt.Sprintln(contact)
+		}
+		return str, nil
 	}
-	return str, nil
+
+	return "", fmt.Errorf("wtf")
 }

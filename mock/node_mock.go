@@ -31,9 +31,9 @@ func (n *mockNode) PutObject(ctx context.Context, data string) (hashAsHex string
 	panic("TODO")
 }
 
-func (n *mockNode) GetObject(rootCtx context.Context, hash string) (valueObject *model.ValueObject, candidates []*contact.Contact, err error) {
+func (n *mockNode) GetObject(rootCtx context.Context, hash string) (FindValueSuccessfulResponse *model.FindValueSuccessfulResponse, candidates []*contact.Contact, err error) {
 	if data, found := n.Store[hash]; found {
-		return &model.ValueObject{DataValue: data, NodeWithValue: n.me}, nil, nil
+		return &model.FindValueSuccessfulResponse{DataValue: data, NodeWithValue: n.me}, nil, nil
 	}
 
 	fakeContact := contact.NewContact(kademliaid.NewRandomKademliaID(), "address")
