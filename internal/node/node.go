@@ -3,7 +3,6 @@ package node
 import (
 	"context"
 	"fmt"
-	"log"
 	"log/slog"
 	"sync"
 	"time"
@@ -21,7 +20,7 @@ type NodeHandler interface {
 	Me() *contact.Contact
 	Bootstrap(rootCtx context.Context) error
 	PutObject(ctx context.Context, data string) (hashAsHex string, err error)
-	GetObject(rootCtx context.Context, hash string) (valueObject *model.ValueObject, candidates []*contact.Contact, err error)
+	GetObject(rootCtx context.Context, hash string) (FindValueSuccessfulResponse *model.FindValueSuccessfulResponse, candidates []*contact.Contact, err error)
 }
 
 type Node struct {
@@ -132,145 +131,6 @@ func (n *Node) PutObject(ctx context.Context, data string) (hashAsHex string, er
 	}
 
 	return hash.String(), nil
-}
-
-// Get takes hash and outputs the contents of the object and the node it was retrieved
-func (n *Node) GetObject(rootCtx context.Context, hash string) (valueObject *model.ValueObject, candidates []*contact.Contact, err error) {
-	// check for value in our own store first
-	value, err := n.Store.GetValue(hash)
-
-	if err == nil {
-		return &model.ValueObject{DataValue: value, NodeWithValue: n.RoutingTable.Me()}, nil, nil
-	}
-
-	// search the network
-	ctx, cancel := context.WithCancel(rootCtx)
-
-	valueChan := make(chan model.ValueObject, alpha)
-	candidateChan := make(chan []*contact.Contact, 1)
-
-	hashAsKademliaID := kademliaid.NewKademliaID(hash)
-	hashAsContact := contact.NewContact(hashAsKademliaID, "")
-
-	visitedSet := contact.NewContactSet()
-	kClosest := &kClosestList{}
-	kClosest.list = n.RoutingTable.FindClosestContacts(hashAsKademliaID, k)
-
-	wg := new(sync.WaitGroup)
-	wg.Add(1)
-
-	go func() {
-		defer wg.Done()
-		for {
-			select {
-			case <-ctx.Done():
-				return
-
-			default:
-				responseContactChan := make(chan []*contact.Contact, alpha)
-				kClosest.updated = false
-				rpcCtx, cancel := context.WithTimeout(ctx, env.RPCTimeout)
-
-				// blocking call
-				n.runParallelFindValueRequest(rpcCtx, kClosest, visitedSet, hash, responseContactChan, valueChan)
-				cancel()
-
-				for contacts := range responseContactChan {
-					for _, contact := range contacts {
-						// don't add nodes that are already visited
-						if !visitedSet.Has(contact) {
-							kClosest.addContact(contact, hashAsContact)
-						}
-					}
-				}
-
-				if !kClosest.updated && kClosest.isSubset(visitedSet) {
-					candidateChan <- kClosest.list
-					return
-				}
-			}
-		}
-	}()
-
-	for {
-		select {
-		case <-rootCtx.Done():
-			cancel()
-			return nil, nil, rootCtx.Err()
-		case candidates := <-candidateChan:
-			cancel()
-			return nil, candidates, nil
-		case valueObject := <-valueChan:
-			cancel()
-			wg.Wait()
-			n.storeAtClosestNode(rootCtx, kClosest, visitedSet, hash, valueObject.DataValue)
-			return &valueObject, nil, nil
-		}
-	}
-
-}
-
-// storeAtClosestNode stores the data in the closest node seen which does not have the data
-func (n *Node) storeAtClosestNode(rootCtx context.Context, kClosest *kClosestList, visitedSet *contact.ContactSet, hash, data string) {
-	candidates := kClosest.List()
-	for _, contact := range candidates {
-		if visitedSet.Has(contact) {
-			ctx, cancel := context.WithTimeout(rootCtx, env.RPCTimeout)
-			candidates, _, err := n.Client.SendFindValue(ctx, contact, hash)
-			cancel()
-
-			// data exists or node is down
-			if candidates == nil || err != nil {
-				continue
-			}
-
-			ctx, cancel = context.WithTimeout(rootCtx, env.RPCTimeout)
-			err = n.Client.SendStore(ctx, contact, data)
-			cancel()
-
-			if err == nil {
-				return
-			}
-
-		}
-	}
-}
-
-func (n *Node) runParallelFindValueRequest(
-	ctx context.Context,
-	kClosest *kClosestList,
-	visitedSet *contact.ContactSet,
-	hash string,
-	responseContactChannel chan []*contact.Contact,
-	valueChan chan model.ValueObject) {
-
-	wg := new(sync.WaitGroup)
-	candidates := getCandidates(kClosest, visitedSet)
-
-	for i := 0; i < alpha && i < len(candidates); i++ {
-		wg.Add(1)
-		visitedSet.Add(candidates[i])
-
-		go func() {
-			defer wg.Done()
-			contacts, data, err := n.Client.SendFindValue(ctx, candidates[i], hash)
-
-			if err != nil {
-				kClosest.remove(candidates[i])
-				log.Printf("WARNING: client findValue error: %v", err)
-				return
-			}
-
-			if len(data) > 0 {
-				valueChan <- model.ValueObject{DataValue: data, NodeWithValue: candidates[i]}
-				return
-			}
-
-			responseContactChannel <- contacts
-		}()
-	}
-	wg.Wait()
-	close(responseContactChannel)
 }
 
 // Ping each contact in <contacts> until one responeses and returns it.
