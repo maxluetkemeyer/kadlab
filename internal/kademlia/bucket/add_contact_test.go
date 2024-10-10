@@ -1,6 +1,7 @@
-package bucket
+package bucket_test
 
 import (
+	"d7024e_group04/internal/kademlia/bucket"
 	"d7024e_group04/internal/kademlia/contact"
 	"d7024e_group04/internal/kademlia/kademliaid"
 	"d7024e_group04/mock"
@@ -11,19 +12,19 @@ func TestAddContact(t *testing.T) {
 
 	cases := []struct {
 		Name        string
-		Bucket      *Bucket
+		Bucket      *bucket.Bucket
 		Contacts    []*contact.Contact
 		ExpectedLen int
 	}{
 		{"One single contact",
-			NewBucket(20),
+			bucket.NewBucket(20),
 			[]*contact.Contact{
 				contact.NewContact(kademliaid.NewRandomKademliaID(), ""),
 			},
 			1,
 		},
 		{"Two different contacts",
-			NewBucket(20),
+			bucket.NewBucket(20),
 			[]*contact.Contact{
 				contact.NewContact(kademliaid.NewKademliaID("1111111100000000000000000000000000000000"), ""),
 				contact.NewContact(kademliaid.NewKademliaID("1111111100000000000000000000000000000001"), ""),
@@ -31,7 +32,7 @@ func TestAddContact(t *testing.T) {
 			2,
 		},
 		{"Two similar contacts",
-			NewBucket(20),
+			bucket.NewBucket(20),
 			[]*contact.Contact{
 				contact.NewContact(kademliaid.NewKademliaID("1111111100000000000000000000000000000000"), ""),
 				contact.NewContact(kademliaid.NewKademliaID("1111111100000000000000000000000000000000"), ""),
@@ -39,7 +40,7 @@ func TestAddContact(t *testing.T) {
 			1,
 		},
 		{"Bucket is full, two different contacts",
-			NewBucket(1),
+			bucket.NewBucket(1),
 			[]*contact.Contact{
 				contact.NewContact(kademliaid.NewKademliaID("1111111100000000000000000000000000000000"), ""),
 				contact.NewContact(kademliaid.NewKademliaID("1111111100000000000000000000000000000002"), ""),
@@ -70,13 +71,13 @@ func TestAddContact(t *testing.T) {
 
 	// Don't delete, this tests AddContact, the other ones test AddContactCustom
 	t.Run("Bucket length should have increased after insertion a new unknown contact", func(t *testing.T) {
-		bucket := NewBucket(20)
+		bucket := bucket.NewBucket(20)
 		contact0 := contact.NewContact(kademliaid.NewRandomKademliaID(), "")
 
 		bucket.AddContact(contact0, client)
 
 		want := 1
-		got := bucket.list.Len()
+		got := getList(bucket).Len()
 
 		if got != want {
 			t.Errorf("got %d, want %d", got, want)
@@ -84,7 +85,7 @@ func TestAddContact(t *testing.T) {
 	})
 
 	t.Run("ping fails", func(t *testing.T) {
-		bucket := NewBucket(2)
+		bucket := bucket.NewBucket(2)
 
 		contact0 := contact.NewContact(kademliaid.NewRandomKademliaID(), "0")
 		contact1 := contact.NewContact(kademliaid.NewRandomKademliaID(), "1")
@@ -93,13 +94,13 @@ func TestAddContact(t *testing.T) {
 		bucket.AddContact(contact0, client)
 		bucket.AddContact(contact1, client)
 
-		front := bucket.list.Front()
+		front := getList(bucket).Front()
 
 		client.SetPingResult(false)
 
 		bucket.AddContact(contact2, client)
 
-		frontAfterFailedPing := bucket.list.Front()
+		frontAfterFailedPing := getList(bucket).Front()
 
 		if front == frontAfterFailedPing {
 			t.Fatal("did not remove head when ping failed")

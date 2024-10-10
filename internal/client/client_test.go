@@ -1,14 +1,16 @@
-package client
+package client_test
 
 import (
 	"context"
-	"d7024e_group04/env"
-	"d7024e_group04/internal/kademlia/contact"
-	"d7024e_group04/internal/kademlia/kademliaid"
-	"d7024e_group04/mock"
 	"reflect"
 	"testing"
 	"time"
+
+	"d7024e_group04/env"
+	"d7024e_group04/internal/client"
+	"d7024e_group04/internal/kademlia/contact"
+	"d7024e_group04/internal/kademlia/kademliaid"
+	"d7024e_group04/mock"
 
 	"google.golang.org/grpc"
 )
@@ -25,7 +27,7 @@ func TestClient_SendPing(t *testing.T) {
 	mock.StartMockGrpcServer(serverID, serverAddress)
 
 	clientContact := contact.NewContact(clientID, clientAddress)
-	client := NewClient(clientContact, grpc.WithContextDialer(mock.BufDialer))
+	client := client.NewClient(clientContact, grpc.WithContextDialer(mock.BufDialer))
 
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	go TimeoutContext(ctx, cancel)
@@ -50,7 +52,7 @@ func TestClient_SendFindNode(t *testing.T) {
 	serverContact := contact.NewContact(serverID, mock.MockServerAddress)
 
 	clientContact := contact.NewContact(clientID, clientAddress)
-	client := NewClient(clientContact, grpc.WithContextDialer(mock.BufDialer))
+	client := client.NewClient(clientContact, grpc.WithContextDialer(mock.BufDialer))
 
 	contacts := server.FillRoutingTable(env.BucketSize)
 
@@ -75,7 +77,7 @@ func TestClient_SendFindValue(t *testing.T) {
 	server := mock.StartMockGrpcServer(serverID, serverAddress)
 
 	clientContact := contact.NewContact(clientID, clientAddress)
-	client := NewClient(clientContact, grpc.WithContextDialer(mock.BufDialer))
+	client := client.NewClient(clientContact, grpc.WithContextDialer(mock.BufDialer))
 
 	t.Run("Data exists on node", func(t *testing.T) {
 		value := "some_value"
@@ -125,7 +127,7 @@ func TestClient_Store(t *testing.T) {
 	targetNode := contact.NewContact(serverID, mock.MockServerAddress)
 
 	clientContact := contact.NewContact(clientID, clientAddress)
-	client := NewClient(clientContact, grpc.WithContextDialer(mock.BufDialer))
+	client := client.NewClient(clientContact, grpc.WithContextDialer(mock.BufDialer))
 
 	value := "some_value"
 	hash := kademliaid.NewKademliaIDFromData(value)
