@@ -1,16 +1,19 @@
 package contact
 
-import "sync"
+import (
+	"d7024e_group04/internal/kademlia/kademliaid"
+	"sync"
+)
 
 // A mathematical set of contacts with a mutex for thread safety
 type ContactSet struct {
-	m map[*Contact]bool
+	m map[kademliaid.KademliaID]bool
 	sync.RWMutex
 }
 
 func NewContactSet() *ContactSet {
 	return &ContactSet{
-		m: make(map[*Contact]bool),
+		m: make(map[kademliaid.KademliaID]bool),
 	}
 }
 
@@ -18,7 +21,7 @@ func NewContactSet() *ContactSet {
 func (s *ContactSet) Add(item *Contact) {
 	s.Lock()
 	defer s.Unlock()
-	s.m[item] = true
+	s.m[item.ID] = true
 }
 
 // Add adds a slice of contacts to the set
@@ -26,7 +29,7 @@ func (s *ContactSet) Adds(items []*Contact) {
 	s.Lock()
 	defer s.Unlock()
 	for _, item := range items {
-		s.m[item] = true
+		s.m[item.ID] = true
 	}
 }
 
@@ -34,14 +37,14 @@ func (s *ContactSet) Adds(items []*Contact) {
 func (s *ContactSet) Remove(item *Contact) {
 	s.Lock()
 	defer s.Unlock()
-	delete(s.m, item)
+	delete(s.m, item.ID)
 }
 
 // Has looks for the existence of the contact
 func (s *ContactSet) Has(item *Contact) bool {
 	s.RLock()
 	defer s.RUnlock()
-	_, ok := s.m[item]
+	_, ok := s.m[item.ID]
 	return ok
 }
 
@@ -56,21 +59,10 @@ func (s *ContactSet) Len() int {
 func (s *ContactSet) Clear() {
 	s.Lock()
 	defer s.Unlock()
-	s.m = make(map[*Contact]bool)
+	s.m = make(map[kademliaid.KademliaID]bool)
 }
 
 // IsEmpty checks for emptiness
 func (s *ContactSet) IsEmpty() bool {
 	return s.Len() == 0
-}
-
-// ContactSet returns a slice of all items
-func (s *ContactSet) List() []*Contact {
-	s.RLock()
-	defer s.RUnlock()
-	list := make([]*Contact, 0)
-	for item := range s.m {
-		list = append(list, item)
-	}
-	return list
 }
