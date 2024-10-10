@@ -22,16 +22,16 @@ type Server struct {
 	id           kademliaid.KademliaID
 	address      string
 	routingTable *routingtable.RoutingTable
-	store        store.Store
+	ttlStore     store.TTLStore
 }
 
 // NewServer returns a new instance of Server
-func NewServer(routingTable *routingtable.RoutingTable, store store.Store) *Server {
+func NewServer(routingTable *routingtable.RoutingTable, ttlStore store.TTLStore) *Server {
 	return &Server{
 		id:           routingTable.Me().ID,
 		address:      routingTable.Me().Address,
 		routingTable: routingTable,
-		store:        store,
+		ttlStore:     ttlStore,
 	}
 }
 
