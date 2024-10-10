@@ -105,7 +105,7 @@ func (c *Client) SendFindValue(ctx context.Context, contactWeRequest *contact.Co
 	defer conn.Close()
 
 	payload := &pb.FindValueRequest{
-		Hash:           kademliaid.NewKademliaIDFromData(hash).Bytes(),
+		Hash:           kademliaid.NewKademliaID(hash).Bytes(),
 		RequestingNode: contactToPbNode(c.me),
 	}
 

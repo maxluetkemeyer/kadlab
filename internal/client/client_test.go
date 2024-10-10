@@ -86,7 +86,7 @@ func TestClient_SendFindValue(t *testing.T) {
 		go TimeoutContext(ctx, cancel)
 
 		targetNode := contact.NewContact(serverID, mock.MockServerAddress)
-		candidates, data, err := client.SendFindValue(ctx, targetNode, value)
+		candidates, data, err := client.SendFindValue(ctx, targetNode, hash.String())
 		if err != nil {
 			t.Fatalf("failed to send find value request, %v", err)
 		}
@@ -101,11 +101,13 @@ func TestClient_SendFindValue(t *testing.T) {
 	})
 
 	t.Run("Data does not exist on node", func(t *testing.T) {
+		value := "non-existent"
+		hash := kademliaid.NewKademliaIDFromData(value)
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 		go TimeoutContext(ctx, cancel)
 
 		targetNode := contact.NewContact(serverID, mock.MockServerAddress)
-		candidates, data, err := client.SendFindValue(ctx, targetNode, "non-existent")
+		candidates, data, err := client.SendFindValue(ctx, targetNode, hash.String())
 		if err != nil {
 			t.Fatalf("failed to send find value request, %v", err)
 		}

@@ -159,7 +159,7 @@ func TestServer_FindValue(t *testing.T) {
 	})
 
 	t.Run("value exists", func(t *testing.T) {
-		srv.store.SetValue(string(hash.Bytes()), data)
+		srv.store.SetValue(hash.String(), data)
 
 		request := &pb.FindValueRequest{
 			Hash:           hash.Bytes(),

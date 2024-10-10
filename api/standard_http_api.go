@@ -10,10 +10,10 @@ import (
 )
 
 type Handler struct {
-	node *node.Node
+	node node.NodeHandler
 }
 
-func NewHandler(node *node.Node) *Handler {
+func NewHandler(node node.NodeHandler) *Handler {
 	return &Handler{
 		node: node,
 	}

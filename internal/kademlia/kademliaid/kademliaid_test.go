@@ -10,6 +10,17 @@ import (
 func TestKademliaID(t *testing.T) {
 	randomBytes := generateRandomBytes(t, IDLength)
 
+	t.Run("data to kademliaID", func(t *testing.T) {
+		value := "some_data"
+		hash := NewKademliaIDFromData(value)
+
+		kademliaIDFromHash := NewKademliaID(hash.String())
+
+		if !hash.Equals(kademliaIDFromHash) {
+			t.Fatalf("id are not matching, got %v, expected %v", kademliaIDFromHash, hash)
+		}
+	})
+
 	t.Run("NewKademliaIDFromBytes and toBytes", func(t *testing.T) {
 		goodBytes := [IDLength]byte{}
 		//badBytes := [env.IDLength + 1]byte{}

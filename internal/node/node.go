@@ -10,10 +10,18 @@ import (
 	"d7024e_group04/env"
 	"d7024e_group04/internal/kademlia/contact"
 	"d7024e_group04/internal/kademlia/kademliaid"
+	"d7024e_group04/internal/kademlia/model"
 	"d7024e_group04/internal/kademlia/routingtable"
 	"d7024e_group04/internal/network"
 	"d7024e_group04/internal/store"
 )
+
+type NodeHandler interface {
+	Me() *contact.Contact
+	Bootstrap(rootCtx context.Context) error
+	PutObject(ctx context.Context, data string) (hashAsHex string, err error)
+	GetObject(rootCtx context.Context, hash string) (FindValueSuccessfulResponse *model.FindValueSuccessfulResponse, candidates []*contact.Contact, err error)
+}
 
 type Node struct {
 	Client       network.ClientRPC
@@ -29,6 +37,10 @@ func New(client network.ClientRPC, routingTable *routingtable.RoutingTable, stor
 		Store:        store,
 		kNet:         kNet,
 	}
+}
+
+func (n *Node) Me() *contact.Contact {
+	return n.RoutingTable.Me()
 }
 
 /*
@@ -119,11 +131,6 @@ func (n *Node) PutObject(ctx context.Context, data string) (hashAsHex string, er
 	}
 
 	return hash.String(), nil
-}
-
-// Get takes hash and outputs the contents of the object and the node it was retrieved
-func (n *Node) GetObject(rootCtx context.Context, hash string) (data string, err error) {
-	panic("TODO")
 }
 
 // Ping each contact in <contacts> until one responeses and returns it.
