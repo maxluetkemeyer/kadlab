@@ -7,7 +7,7 @@ import (
 )
 
 func TestSet_Add(t *testing.T) {
-	set := NewContactSet()
+	set := NewKademliaIdSet()
 
 	contact := NewContact(kademliaid.NewRandomKademliaID(), "address")
 
@@ -24,7 +24,7 @@ func TestSet_Add(t *testing.T) {
 	}
 }
 func TestSet_Adds(t *testing.T) {
-	set := NewContactSet()
+	set := NewKademliaIdSet()
 
 	contact1 := NewContact(kademliaid.NewRandomKademliaID(), "address 1")
 	contact2 := NewContact(kademliaid.NewRandomKademliaID(), "address 2")
@@ -47,7 +47,7 @@ func TestSet_Adds(t *testing.T) {
 }
 
 func TestSet_Remove(t *testing.T) {
-	set := NewContactSet()
+	set := NewKademliaIdSet()
 
 	contacts := fillSet(set, 2)
 
@@ -72,7 +72,7 @@ func TestSet_Remove(t *testing.T) {
 }
 
 func TestSet_Has(t *testing.T) {
-	set := NewContactSet()
+	set := NewKademliaIdSet()
 
 	contacts := fillSet(set, 2)
 
@@ -88,7 +88,7 @@ func TestSet_Has(t *testing.T) {
 }
 
 func TestSet_Len(t *testing.T) {
-	set := NewContactSet()
+	set := NewKademliaIdSet()
 
 	fillSet(set, 2)
 
@@ -98,7 +98,7 @@ func TestSet_Len(t *testing.T) {
 }
 
 func TestSet_Clear(t *testing.T) {
-	set := NewContactSet()
+	set := NewKademliaIdSet()
 
 	contacts := fillSet(set, 2)
 
@@ -115,7 +115,7 @@ func TestSet_Clear(t *testing.T) {
 }
 
 func TestSet_IsEmpty(t *testing.T) {
-	set := NewContactSet()
+	set := NewKademliaIdSet()
 
 	if len(set.m) != 0 {
 		t.Fatalf("set is not empty, len of set is %v", len(set.m))
@@ -126,7 +126,7 @@ func TestSet_IsEmpty(t *testing.T) {
 	}
 }
 
-func fillSet(set *ContactSet, count int) (contacts []*Contact) {
+func fillSet(set *KademliaIdSet, count int) (contacts []*Contact) {
 	for i := range count {
 		contact := NewContact(kademliaid.NewRandomKademliaID(), fmt.Sprintf("address %v", i))
 		contacts = append(contacts, contact)

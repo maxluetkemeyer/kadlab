@@ -6,22 +6,22 @@ import (
 	"fmt"
 )
 
-type mockClient struct {
+type MockClient struct {
 	me             *contact.Contact
 	pingSuccessful bool
 }
 
-func NewClientMock(me *contact.Contact) *mockClient {
-	return &mockClient{
+func NewClientMock(me *contact.Contact) *MockClient {
+	return &MockClient{
 		me: me,
 	}
 }
 
-func (c *mockClient) SetPingResult(result bool) {
+func (c *MockClient) SetPingResult(result bool) {
 	c.pingSuccessful = result
 }
 
-func (c *mockClient) SendPing(ctx context.Context, targetIpWithPort string) (*contact.Contact, error) {
+func (c *MockClient) SendPing(ctx context.Context, targetIpWithPort string) (*contact.Contact, error) {
 	if c.pingSuccessful {
 		return c.me, nil
 	}
@@ -29,14 +29,14 @@ func (c *mockClient) SendPing(ctx context.Context, targetIpWithPort string) (*co
 	return nil, fmt.Errorf("failed to ping")
 }
 
-func (c *mockClient) SendFindNode(ctx context.Context, contactWeRequest, contactWeAreSearchingFor *contact.Contact) ([]*contact.Contact, error) {
+func (c *MockClient) SendFindNode(ctx context.Context, contactWeRequest, contactWeAreSearchingFor *contact.Contact) ([]*contact.Contact, error) {
 	panic("TODO")
 }
 
-func (c *mockClient) SendFindValue(ctx context.Context, contactWeRequest *contact.Contact, hash string) ([]*contact.Contact, string, error) {
+func (c *MockClient) SendFindValue(ctx context.Context, contactWeRequest *contact.Contact, hash string) ([]*contact.Contact, string, error) {
 	panic("TODO")
 }
 
-func (c *mockClient) SendStore(ctx context.Context, contactWeRequest *contact.Contact, data string) error {
+func (c *MockClient) SendStore(ctx context.Context, contactWeRequest *contact.Contact, data string) error {
 	panic("TODO")
 }

@@ -57,7 +57,7 @@ func (n *Node) Bootstrap(rootCtx context.Context) error {
 	ctx, cancel := context.WithTimeout(rootCtx, env.BootstrapTimeout)
 	for {
 		if ctx.Err() != nil {
-			defer cancel()
+			cancel()
 			return ctx.Err()
 		}
 
@@ -81,7 +81,7 @@ func (n *Node) Bootstrap(rootCtx context.Context) error {
 		}
 
 		logger.Warn("Unable to ping any ip", slog.Any("err", err))
-		slog.Warn("Retrying bootstrap in 100 milis")
+		slog.Warn("Retrying bootstrap in 100 milliseconds")
 		time.Sleep(100 * time.Millisecond)
 	}
 
@@ -133,7 +133,7 @@ func (n *Node) PutObject(ctx context.Context, data string) (hashAsHex string, er
 	return hash.String(), nil
 }
 
-// Ping each contact in <contacts> until one responeses and returns it.
+// Ping each contact in <contacts> until one responses and returns it.
 func (n *Node) pingIPsAndGetContact(ctx context.Context, targetIPs []string) (*contact.Contact, error) {
 	for _, targetIP := range targetIPs {
 		contact, err := n.Client.SendPing(ctx, fmt.Sprintf("%v:%v", targetIP, env.Port))

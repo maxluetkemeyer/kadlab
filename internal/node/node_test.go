@@ -125,7 +125,7 @@ func TestNode_GetObject(t *testing.T) {
 	})
 
 	t.Run("check that data was replicated", func(t *testing.T) {
-		// get nodes that are not ourself and node we know has the data
+		// get nodes that are not ourselves and node we know has the data
 		closestCandidates := node.RoutingTable.FindClosestContacts(key2AsKademliaID, 20, node.Me().ID, node2.Me().ID)
 
 		for _, candidate := range closestCandidates {

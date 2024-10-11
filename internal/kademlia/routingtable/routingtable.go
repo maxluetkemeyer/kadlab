@@ -98,7 +98,7 @@ func (routingTable *RoutingTable) getBucketIndex(id kademliaid.KademliaID) int {
 	// TODO: Simplify loop
 	for i := 0; i < env.IDLength; i++ {
 		for j := 0; j < 8; j++ {
-			// Loop thorugh each bit of the id
+			// Loop through each bit of the id
 			// TODO: Maybe stick to byte type?
 
 			if (distance[i]>>uint8(7-j))&0x1 != 0 {

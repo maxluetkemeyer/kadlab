@@ -24,7 +24,7 @@ func (kClosestList *kClosestList) Has(targetContact *contact.Contact) bool {
 	return false
 }
 
-func (kClosestList *kClosestList) isSubset(set *contact.ContactSet) bool {
+func (kClosestList *kClosestList) isSubset(set *contact.KademliaIdSet) bool {
 	kClosestList.mut.RLock()
 	defer kClosestList.mut.RUnlock()
 
