@@ -8,11 +8,12 @@ type ProxyNetwork struct {
 	publicNetwork *PublicNetwork
 }
 
+/*
 func NewProxyNetwork() *ProxyNetwork {
 	return &ProxyNetwork{
 		publicNetwork: &PublicNetwork{},
 	}
-}
+}*/
 
 func (network *ProxyNetwork) ResolveDNS(domain string) ([]string, error) {
 	switch domain {

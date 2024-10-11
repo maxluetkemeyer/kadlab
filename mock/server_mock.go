@@ -25,7 +25,7 @@ type MockGrpcServer struct {
 	DataStore     map[string]string
 }
 
-func BufDialer(context.Context, string) (net.Conn, error) {
+func BufDialer(_ context.Context, _ string) (net.Conn, error) {
 	return Lis.Dial()
 }
 
@@ -48,11 +48,11 @@ func StartMockGrpcServer(id kademliaid.KademliaID, address string) *MockGrpcServ
 	return server
 }
 
-func (m *MockGrpcServer) Ping(ctx context.Context, in *pb.Node) (*pb.Node, error) {
+func (m *MockGrpcServer) Ping(_ context.Context, _ *pb.Node) (*pb.Node, error) {
 	return &pb.Node{ID: m.ServerContact.ID.Bytes(), IPWithPort: m.ServerContact.Address}, nil
 }
 
-func (m *MockGrpcServer) FindNode(ctx context.Context, in *pb.FindNodeRequest) (*pb.FindNodeResult, error) {
+func (m *MockGrpcServer) FindNode(_ context.Context, _ *pb.FindNodeRequest) (*pb.FindNodeResult, error) {
 	nodes := make([]*pb.Node, 0, len(m.RoutingTable))
 
 	for _, contact := range m.RoutingTable {
@@ -62,7 +62,7 @@ func (m *MockGrpcServer) FindNode(ctx context.Context, in *pb.FindNodeRequest) (
 	return &pb.FindNodeResult{Nodes: nodes}, nil
 }
 
-func (m *MockGrpcServer) FindValue(ctx context.Context, in *pb.FindValueRequest) (*pb.FindValueResult, error) {
+func (m *MockGrpcServer) FindValue(_ context.Context, in *pb.FindValueRequest) (*pb.FindValueResult, error) {
 	value, found := m.DataStore[string(in.Hash)]
 	if found {
 		return &pb.FindValueResult{Value: &pb.FindValueResult_Data{Data: value}}, nil
@@ -71,7 +71,7 @@ func (m *MockGrpcServer) FindValue(ctx context.Context, in *pb.FindValueRequest)
 	return &pb.FindValueResult{Value: &pb.FindValueResult_Nodes{Nodes: &pb.FindNodeResult{}}}, nil
 }
 
-func (m *MockGrpcServer) Store(ctx context.Context, in *pb.StoreRequest) (*pb.StoreResult, error) {
+func (m *MockGrpcServer) Store(_ context.Context, in *pb.StoreRequest) (*pb.StoreResult, error) {
 	key := in.Key
 	value := in.Value
 
