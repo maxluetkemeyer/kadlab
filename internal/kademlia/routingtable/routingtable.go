@@ -12,7 +12,6 @@ import (
 
 // RoutingTable definition
 // keeps a reference contact of me and an array of buckets
-// TODO: Do we want to store our address here?
 // 160 buckets with the current IDLength
 type RoutingTable struct {
 	mut     sync.RWMutex

@@ -71,7 +71,7 @@ func cliLogic(ctx context.Context, cancelCtx context.CancelFunc, errChan chan er
 	case "exit":
 		cancelCtx()
 	case "forget":
-		panic("TODO")
+		fmt.Println("Not implemented yet")
 	default:
 		fmt.Println("invalid command")
 	}
