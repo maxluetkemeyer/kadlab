@@ -22,11 +22,11 @@ type Server struct {
 	id           kademliaid.KademliaID
 	address      string
 	routingTable *routingtable.RoutingTable
-	store        store.Store
+	store        store.TTLStore
 }
 
 // NewServer returns a new instance of Server
-func NewServer(routingTable *routingtable.RoutingTable, store store.Store) *Server {
+func NewServer(routingTable *routingtable.RoutingTable, store store.TTLStore) *Server {
 	return &Server{
 		id:           routingTable.Me().ID,
 		address:      routingTable.Me().Address,
@@ -59,7 +59,7 @@ func (s *Server) Start(ctx context.Context) error {
 }
 
 // Ping serves PING rpc calls, saves the senders contact info and replies with its own contact info
-func (s *Server) Ping(ctx context.Context, sender *pb.Node) (*pb.Node, error) {
+func (s *Server) Ping(_ context.Context, sender *pb.Node) (*pb.Node, error) {
 	log.Printf("received ping from\nNode: %v\nAddress: %v\n", hex.EncodeToString(sender.ID), sender.IPWithPort)
 
 	if len(sender.ID) != env.IDLength {
@@ -76,7 +76,7 @@ func (s *Server) Ping(ctx context.Context, sender *pb.Node) (*pb.Node, error) {
 	}, nil
 }
 
-func (s *Server) FindNode(ctx context.Context, request *pb.FindNodeRequest) (*pb.FindNodeResult, error) {
+func (s *Server) FindNode(_ context.Context, request *pb.FindNodeRequest) (*pb.FindNodeResult, error) {
 	targetNodeID := kademliaid.NewKademliaIDFromBytes([env.IDLength]byte(request.TargetID))
 	requestingNodeID := kademliaid.NewKademliaIDFromBytes([env.IDLength]byte(request.RequestingNode.ID))
 	candidates := s.routingTable.FindClosestContacts(targetNodeID, env.BucketSize, requestingNodeID)

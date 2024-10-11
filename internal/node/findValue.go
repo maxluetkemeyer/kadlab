@@ -28,7 +28,7 @@ func (n *Node) GetObject(rootCtx context.Context, hash string) (FindValueSuccess
 	hashAsKademliaID := kademliaid.NewKademliaID(hash)
 	hashAsContact := contact.NewContact(hashAsKademliaID, "")
 
-	visitedSet := contact.NewContactSet()
+	visitedSet := contact.NewKademliaIdSet()
 	kClosest := &kClosestList{}
 	kClosest.list = n.RoutingTable.FindClosestContacts(hashAsKademliaID, k)
 
@@ -94,7 +94,7 @@ func (n *Node) GetObject(rootCtx context.Context, hash string) (FindValueSuccess
 func (n *Node) runParallelFindValueRequest(
 	ctx context.Context,
 	kClosest *kClosestList,
-	visitedSet *contact.ContactSet,
+	visitedSet *contact.KademliaIdSet,
 	hash string,
 	responseContactChannel chan []*contact.Contact,
 	valueChan chan model.FindValueSuccessfulResponse) {
@@ -129,7 +129,7 @@ func (n *Node) runParallelFindValueRequest(
 }
 
 // storeAtClosestNode stores the data in the closest node seen which does not have the data
-func (n *Node) storeAtClosestNode(rootCtx context.Context, kClosest *kClosestList, visitedSet *contact.ContactSet, hash, dataToStore string) {
+func (n *Node) storeAtClosestNode(rootCtx context.Context, kClosest *kClosestList, visitedSet *contact.KademliaIdSet, hash, dataToStore string) {
 	candidates := kClosest.List()
 	for _, contact := range candidates {
 		if !visitedSet.Has(contact) {

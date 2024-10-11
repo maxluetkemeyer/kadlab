@@ -16,7 +16,7 @@ var (
 )
 
 func (n *Node) findNode(rootCtx context.Context, contactWeAreSearchingFor *contact.Contact) []*contact.Contact {
-	visitedSet := contact.NewContactSet()
+	visitedSet := contact.NewKademliaIdSet()
 	kClosest := &kClosestList{}
 
 	// TODO these are reassigned during runtime
@@ -41,7 +41,7 @@ func (n *Node) findNode(rootCtx context.Context, contactWeAreSearchingFor *conta
 func (n *Node) findNodeIteration(
 	rootCtx context.Context,
 	contactWeAreSearchingFor *contact.Contact,
-	visitedSet *contact.ContactSet,
+	visitedSet *contact.KademliaIdSet,
 	kClosest *kClosestList) {
 
 	// get kClosest that are unvisited
@@ -71,7 +71,7 @@ func (n *Node) runParallelFindNodeRequest(
 	ctx context.Context,
 	candidates []*contact.Contact,
 	wg *sync.WaitGroup,
-	visitedSet *contact.ContactSet,
+	visitedSet *contact.KademliaIdSet,
 	contactWeAreSearchingFor *contact.Contact,
 	kClosest *kClosestList) chan []*contact.Contact {
 	// Goroutines, strict parallelism
@@ -97,7 +97,7 @@ func (n *Node) runParallelFindNodeRequest(
 	return responseContactChannel
 }
 
-func getCandidates(kClosest *kClosestList, visitedSet *contact.ContactSet) (candidates []*contact.Contact) {
+func getCandidates(kClosest *kClosestList, visitedSet *contact.KademliaIdSet) (candidates []*contact.Contact) {
 	for _, closeContact := range kClosest.list {
 		if !visitedSet.Has(closeContact) {
 			candidates = append(candidates, closeContact)

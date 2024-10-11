@@ -32,11 +32,12 @@ func main() {
 	me := createOwnContact()
 	routingTable := routingtable.NewRoutingTable(me)
 	memoryStore := store.NewMemoryStore()
+	simpleTtlStore := store.NewSimpleTTLStore(memoryStore)
 	client := client.NewClient(me)
 	kNetwork := &network.PublicNetwork{}
-	node := node.New(client, routingTable, memoryStore, kNetwork)
+	node := node.New(client, routingTable, simpleTtlStore, kNetwork)
 
-	startServer(errGroup, errCtx, routingTable, memoryStore)
+	startServer(errGroup, errCtx, routingTable, simpleTtlStore)
 	startAPI(errGroup, errCtx, node)
 	startCLI(errGroup, errCtx, cancelCtx, node)
 	startBootstrapping(errGroup, errCtx, node)
@@ -64,7 +65,7 @@ func createOwnContact() (me *contact.Contact) {
 	return contact.NewContact(id, ipWithPort)
 }
 
-func startServer(errGroup *errgroup.Group, errCtx context.Context, routingTable *routingtable.RoutingTable, store store.Store) {
+func startServer(errGroup *errgroup.Group, errCtx context.Context, routingTable *routingtable.RoutingTable, store store.TTLStore) {
 	newServer := server.NewServer(routingTable, store)
 	errGroup.Go(func() error {
 		log.Println("STARTING SERVER")

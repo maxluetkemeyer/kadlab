@@ -1,10 +1,10 @@
 package routingtable
 
 import (
+	"d7024e_group04/env"
 	"d7024e_group04/internal/kademlia/contact"
 	"d7024e_group04/internal/kademlia/kademliaid"
 	"fmt"
-	"os"
 	"testing"
 )
 
@@ -13,7 +13,8 @@ import (
 
 func TestRoutingTable(t *testing.T) {
 	//TODO: CHANGEME
-	os.Setenv("BUCKET_SIZE", "20")
+	//os.Setenv("BUCKET_SIZE", "20")
+	env.BucketSize = 20
 
 	rt := NewRoutingTable(contact.NewContact(kademliaid.NewKademliaID("FFFFFFFF00000000000000000000000000000000"), "localhost:8000"))
 	rt.AddContact(contact.NewContact(kademliaid.NewKademliaID("FFFFFFFF00000000000000000000000000000000"), "localhost:8001"))

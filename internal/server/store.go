@@ -11,7 +11,7 @@ import (
 	"log"
 )
 
-func (s *Server) Store(ctx context.Context, content *pb.StoreRequest) (*pb.StoreResult, error) {
+func (s *Server) Store(_ context.Context, content *pb.StoreRequest) (*pb.StoreResult, error) {
 	log.Print("received store rpc")
 
 	senderID := kademliaid.NewKademliaIDFromBytes([env.IDLength]byte(content.RequestingNode.ID))
@@ -29,7 +29,7 @@ func (s *Server) Store(ctx context.Context, content *pb.StoreRequest) (*pb.Store
 	}
 
 	hexKey := hex.EncodeToString(key)
-	s.store.SetValue(hexKey, value)
+	s.store.SetValue(hexKey, value, env.TTL)
 
 	return &pb.StoreResult{
 		Success: true,

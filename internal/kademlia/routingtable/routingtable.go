@@ -12,7 +12,6 @@ import (
 
 // RoutingTable definition
 // keeps a reference contact of me and an array of buckets
-// TODO: Do we want to store our address here?
 // 160 buckets with the current IDLength
 type RoutingTable struct {
 	mut     sync.RWMutex
@@ -98,7 +97,7 @@ func (routingTable *RoutingTable) getBucketIndex(id kademliaid.KademliaID) int {
 	// TODO: Simplify loop
 	for i := 0; i < env.IDLength; i++ {
 		for j := 0; j < 8; j++ {
-			// Loop thorugh each bit of the id
+			// Loop through each bit of the id
 			// TODO: Maybe stick to byte type?
 
 			if (distance[i]>>uint8(7-j))&0x1 != 0 {

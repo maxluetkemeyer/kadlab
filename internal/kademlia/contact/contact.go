@@ -10,7 +10,7 @@ import (
 // Contact definition
 // stores the KademliaID, the ip address and the distance
 // 3-tuple mentioned in the paper
-// TODO: It is not like the paper <ip, udp port, node id>, but <id, address(ip+port), distance(maybe cached)>
+// CAUTION: It is not like the paper <ip, udp port, node id>, but <id, address(ip+port), distance(maybe cached)>
 type Contact struct {
 	ID       kademliaid.KademliaID `json:"ID"`
 	Address  string                `json:"Address"`
@@ -34,23 +34,20 @@ func NewContact(id kademliaid.KademliaID, address string) *Contact {
 
 // CalcDistance calculates the distance to the target and
 // fills the contacts distance field
-// TODO: target should be a contact
-func (contact *Contact) CalcDistance(target kademliaid.KademliaID) {
-	contact.Distance = contact.ID.CalcDistance(target)
+func (c *Contact) CalcDistance(target kademliaid.KademliaID) {
+	c.Distance = c.ID.CalcDistance(target)
 }
 
 // Less returns true if contact.distance < otherContact.distance
-// TODO: Don't know if we use it in this way, lets see
 // We just compare distances here
-// TODO: It implements the comparable interface or smth like this, for sorting
-func (contact *Contact) Less(otherContact *Contact) bool {
-	return contact.Distance.Less(otherContact.Distance)
+// It implements the comparable interface or smth like this, for sorting
+func (c *Contact) Less(otherContact *Contact) bool {
+	return c.Distance.Less(otherContact.Distance)
 }
 
 // String returns a simple string representation of a Contact
-// TODO: It should implement the standard toString interface, check this
-func (contact *Contact) String() string {
-	return fmt.Sprintf(`contact("%s", "%s")`, contact.ID, contact.Address)
+func (c *Contact) String() string {
+	return fmt.Sprintf(`contact("%s", "%s")`, c.ID, c.Address)
 }
 
 // SortContacts sorts a slice of contacts

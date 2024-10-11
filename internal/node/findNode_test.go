@@ -26,7 +26,7 @@ import (
 
 type TestNode struct {
 	server       *server.Server
-	store        store.Store
+	store        store.TTLStore
 	contact      *contact.Contact
 	routingTable *routingtable.RoutingTable
 }
@@ -38,11 +38,12 @@ func newTestNode(me *contact.Contact, contacts []*contact.Contact) *TestNode {
 		routingTable.AddContact(c)
 	}
 
-	store := store.NewMemoryStore()
+	memoryStore := store.NewMemoryStore()
+	simpleTtlStore := store.NewSimpleTTLStore(memoryStore)
 
 	return &TestNode{
-		server:       server.NewServer(routingTable, store),
-		store:        store,
+		server:       server.NewServer(routingTable, simpleTtlStore),
+		store:        simpleTtlStore,
 		contact:      me,
 		routingTable: routingTable,
 	}
@@ -104,16 +105,16 @@ func newClientMock(testNodes map[string]*TestNode, me *contact.Contact) *ClientM
 	}
 }
 
-func (c *ClientMock) SendPing(ctx context.Context, targetIpWithPort string) (*contact.Contact, error) {
+func (c *ClientMock) SendPing(_ context.Context, _ string) (*contact.Contact, error) {
 	return nil, fmt.Errorf("should not be used")
 }
 
-func (c *ClientMock) SendFindNode(ctx context.Context, contactWeRequest, contactWeAreSearchingFor *contact.Contact) ([]*contact.Contact, error) {
+func (c *ClientMock) SendFindNode(_ context.Context, contactWeRequest, contactWeAreSearchingFor *contact.Contact) ([]*contact.Contact, error) {
 	candidateNode := c.testNodes[contactWeRequest.Address]
 	return candidateNode.routingTable.FindClosestContacts(contactWeAreSearchingFor.ID, env.BucketSize), nil
 }
 
-func (c *ClientMock) SendFindValue(ctx context.Context, contactWeRequest *contact.Contact, hash string) ([]*contact.Contact, string, error) {
+func (c *ClientMock) SendFindValue(_ context.Context, contactWeRequest *contact.Contact, hash string) ([]*contact.Contact, string, error) {
 	candidateNode := c.testNodes[contactWeRequest.Address]
 
 	value, err := candidateNode.store.GetValue(hash)
@@ -125,10 +126,10 @@ func (c *ClientMock) SendFindValue(ctx context.Context, contactWeRequest *contac
 	return nil, value, nil
 }
 
-func (c *ClientMock) SendStore(ctx context.Context, contactWeRequest *contact.Contact, data string) error {
+func (c *ClientMock) SendStore(_ context.Context, contactWeRequest *contact.Contact, data string) error {
 	candidateNode := c.testNodes[contactWeRequest.Address]
 	key := kademliaid.NewKademliaIDFromData(data)
-	candidateNode.store.SetValue(key.String(), data)
+	candidateNode.store.SetValue(key.String(), data, time.Hour)
 	return nil
 }
 
