@@ -26,7 +26,7 @@ import (
 
 type TestNode struct {
 	server       *server.Server
-	store        store.Store
+	store        store.TTLStore
 	contact      *contact.Contact
 	routingTable *routingtable.RoutingTable
 }
@@ -38,11 +38,12 @@ func newTestNode(me *contact.Contact, contacts []*contact.Contact) *TestNode {
 		routingTable.AddContact(c)
 	}
 
-	store := store.NewMemoryStore()
+	memoryStore := store.NewMemoryStore()
+	simpleTtlStore := store.NewSimpleTTLStore(memoryStore)
 
 	return &TestNode{
-		server:       server.NewServer(routingTable, store),
-		store:        store,
+		server:       server.NewServer(routingTable, simpleTtlStore),
+		store:        simpleTtlStore,
 		contact:      me,
 		routingTable: routingTable,
 	}
@@ -128,7 +129,7 @@ func (c *ClientMock) SendFindValue(ctx context.Context, contactWeRequest *contac
 func (c *ClientMock) SendStore(ctx context.Context, contactWeRequest *contact.Contact, data string) error {
 	candidateNode := c.testNodes[contactWeRequest.Address]
 	key := kademliaid.NewKademliaIDFromData(data)
-	candidateNode.store.SetValue(key.String(), data)
+	candidateNode.store.SetValue(key.String(), data, time.Hour)
 	return nil
 }
 

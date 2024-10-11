@@ -25,7 +25,7 @@ var (
 
 func initServer() *Server {
 	routingTable := routingtable.NewRoutingTable(contact.NewContact(ServerID, ServerAddress))
-	return NewServer(routingTable, store.NewMemoryStore())
+	return NewServer(routingTable, store.NewSimpleTTLStore(store.NewMemoryStore()))
 }
 
 func TestServer_Serve(t *testing.T) {
@@ -159,7 +159,7 @@ func TestServer_FindValue(t *testing.T) {
 	})
 
 	t.Run("value exists", func(t *testing.T) {
-		srv.store.SetValue(hash.String(), data)
+		srv.store.SetValue(hash.String(), data, time.Hour)
 
 		request := &pb.FindValueRequest{
 			Hash:           hash.Bytes(),

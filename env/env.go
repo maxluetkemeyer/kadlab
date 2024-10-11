@@ -1,6 +1,7 @@
 package env
 
 import (
+	"fmt"
 	"log"
 	"log/slog"
 	"os"
@@ -17,7 +18,7 @@ var NodesProxyDomain = "kademlianodes"
 var Alpha = 3 // degree of parallelism
 var RPCTimeout = 5 * time.Second
 var BootstrapTimeout = 1 * time.Minute
-var TTLinSeconds = 60 * 60 * time.Second
+var TTL = 60 * 60 * time.Second
 
 func init() {
 	log.Println("Initialize environment variables")
@@ -80,7 +81,8 @@ func init() {
 		if err != nil {
 			log.Fatalf("invalid ttl size: %v", ttlInSeconds)
 		}
-		TTLinSeconds := ttlInSecondsInt * time.Second
+		TTL = time.Duration(ttlInSecondsInt) * time.Second
+		fmt.Printf("TTL %v", TTL)
 	}
 
 	if debug {

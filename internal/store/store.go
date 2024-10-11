@@ -10,6 +10,6 @@ type Store interface {
 type TTLStore interface {
 	SetValue(key string, value string, ttl time.Duration)
 	GetValue(key string) (value string, error error)
-	SetTTL(key string, ttl time.Duration) error
+	SetTTL(key string, ttl time.Duration)
 	GetTTL(key string) (time.Duration, error)
 }
