@@ -86,7 +86,7 @@ func TestClient_SendFindValue(t *testing.T) {
 		go TimeoutContext(ctx, cancel)
 
 		targetNode := contact.NewContact(serverID, mock.MockServerAddress)
-		candidates, data, err := client.SendFindValue(ctx, targetNode, value)
+		candidates, data, err := client.SendFindValue(ctx, targetNode, hash.String())
 		if err != nil {
 			t.Fatalf("failed to send find value request, %v", err)
 		}
@@ -101,11 +101,13 @@ func TestClient_SendFindValue(t *testing.T) {
 	})
 
 	t.Run("Data does not exist on node", func(t *testing.T) {
+		value := "non-existent"
+		hash := kademliaid.NewKademliaIDFromData(value)
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 		go TimeoutContext(ctx, cancel)
 
 		targetNode := contact.NewContact(serverID, mock.MockServerAddress)
-		candidates, data, err := client.SendFindValue(ctx, targetNode, "non-existent")
+		candidates, data, err := client.SendFindValue(ctx, targetNode, hash.String())
 		if err != nil {
 			t.Fatalf("failed to send find value request, %v", err)
 		}
@@ -118,7 +120,35 @@ func TestClient_SendFindValue(t *testing.T) {
 			t.Fatalf("no candidates returned in response")
 		}
 	})
+}
 
+func TestClient_Store(t *testing.T) {
+	server := mock.StartMockGrpcServer(serverID, serverAddress)
+	targetNode := contact.NewContact(serverID, mock.MockServerAddress)
+
+	clientContact := contact.NewContact(clientID, clientAddress)
+	client := NewClient(clientContact, grpc.WithContextDialer(mock.BufDialer))
+
+	value := "some_value"
+	hash := kademliaid.NewKademliaIDFromData(value)
+
+	t.Run("store data", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+		go TimeoutContext(ctx, cancel)
+
+		err := client.SendStore(ctx, targetNode, value)
+
+		if err != nil {
+			t.Fatalf("failed to send store request")
+		}
+
+		serverValue := server.DataStore[string(hash.Bytes())]
+
+		if serverValue != value {
+			t.Fatalf("data stored in server is not same as sent data, expected %v, got %v", value, serverValue)
+		}
+
+	})
 }
 
 func TimeoutContext(ctx context.Context, cancel context.CancelFunc) {

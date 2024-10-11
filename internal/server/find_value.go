@@ -3,12 +3,13 @@ package server
 import (
 	"context"
 	pb "d7024e_group04/proto"
+	"encoding/hex"
 	"fmt"
 )
 
 // TODO: Input Validation, Tests, Error handling in string, getvalue, ...
 func (s *Server) FindValue(ctx context.Context, request *pb.FindValueRequest) (*pb.FindValueResult, error) {
-	key := string(request.Hash)
+	key := hex.EncodeToString(request.Hash)
 
 	value, err := s.store.GetValue(key)
 

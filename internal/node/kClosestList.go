@@ -63,25 +63,34 @@ func (kClosestList *kClosestList) remove(target *contact.Contact) {
 	kClosestList.list = contactList
 }
 
-func (kClosestList *kClosestList) addContacts(contacts []*contact.Contact, referenceContact *contact.Contact) {
-	for _, contact := range contacts {
-		contact.CalcDistance(referenceContact.ID)
+func (kClosestList *kClosestList) addContact(contact *contact.Contact, referenceContact *contact.Contact) {
+	contact.CalcDistance(referenceContact.ID)
 
-		if kClosestList.Has(contact) {
-			continue
-		}
-
-		if len(kClosestList.list) < k {
-			kClosestList.list = append(kClosestList.list, contact)
-			kClosestList.sort()
-			kClosestList.updated = true
-			continue
-		}
-
-		if contact.Less(kClosestList.list[k-1]) {
-			kClosestList.list[k-1] = contact
-			kClosestList.sort()
-			kClosestList.updated = true
-		}
+	if kClosestList.Has(contact) {
+		return
 	}
+
+	if len(kClosestList.list) < k {
+		kClosestList.mut.Lock()
+		kClosestList.list = append(kClosestList.list, contact)
+		kClosestList.mut.Unlock()
+		kClosestList.sort()
+		kClosestList.updated = true
+		return
+	}
+
+	if contact.Less(kClosestList.list[k-1]) {
+		kClosestList.mut.Lock()
+		kClosestList.list[k-1] = contact
+		kClosestList.mut.Unlock()
+		kClosestList.sort()
+		kClosestList.updated = true
+	}
+}
+
+func (kClosestList *kClosestList) List() []*contact.Contact {
+	kClosestList.sort()
+	kClosestList.mut.RLock()
+	defer kClosestList.mut.RUnlock()
+	return kClosestList.list
 }

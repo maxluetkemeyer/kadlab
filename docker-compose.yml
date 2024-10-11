@@ -8,7 +8,7 @@ services:
     deploy:
       endpoint_mode: dnsrr
       mode: replicated
-      replicas: 10
+      replicas: 50
       # restart_policy:
       #   condition: on-failure
       #   delay: 5s
@@ -23,6 +23,7 @@ services:
       - NODES_PROXY_DOMAIN
       - ALPHA
       - RPC_TIMEOUT_IN_SECONDS
+      - DEBUG=true
 
 networks:
   kademlia_network:

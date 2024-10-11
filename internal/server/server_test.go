@@ -159,7 +159,7 @@ func TestServer_FindValue(t *testing.T) {
 	})
 
 	t.Run("value exists", func(t *testing.T) {
-		srv.store.SetValue(string(hash.Bytes()), data)
+		srv.store.SetValue(hash.String(), data)
 
 		request := &pb.FindValueRequest{
 			Hash:           hash.Bytes(),
@@ -210,7 +210,7 @@ func TestServer_Store(t *testing.T) {
 			t.Fatalf("rpc Store failed, %v", err)
 		}
 
-		dataFromServer, err := srv.store.GetValue(string(key.Bytes()))
+		dataFromServer, err := srv.store.GetValue(key.String())
 
 		if err != nil {
 			t.Fatalf("GetValue failed, %v", err)

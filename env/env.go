@@ -2,6 +2,7 @@ package env
 
 import (
 	"log"
+	"log/slog"
 	"os"
 	"strconv"
 	"time"
@@ -15,6 +16,7 @@ var BucketSize = 20 // must be larger than 0
 var NodesProxyDomain = "kademlianodes"
 var Alpha = 3 // degree of parallelism
 var RPCTimeout = 5 * time.Second
+var BootstrapTimeout = 1 * time.Minute
 var TTLinSeconds = 60 * 60 * time.Second
 
 func init() {
@@ -27,6 +29,7 @@ func init() {
 	alpha := os.Getenv("ALPHA")
 	rpcTimeoutInSeconds := os.Getenv("RPC_TIMEOUT_IN_SECONDS")
 	ttlInSeconds := os.Getenv("TTLinSeconds")
+	_, debug := os.LookupEnv("DEBUG")
 
 	if port != "" {
 		portInt, err := strconv.Atoi(port)
@@ -80,4 +83,7 @@ func init() {
 		TTLinSeconds := ttlInSecondsInt * time.Second
 	}
 
+	if debug {
+		slog.SetLogLoggerLevel(slog.LevelDebug)
+	}
 }

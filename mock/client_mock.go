@@ -37,6 +37,6 @@ func (c *mockClient) SendFindValue(ctx context.Context, contactWeRequest *contac
 	panic("TODO")
 }
 
-func (c *mockClient) SendStore(ctx context.Context, data string) error {
+func (c *mockClient) SendStore(ctx context.Context, contactWeRequest *contact.Contact, data string) error {
 	panic("TODO")
 }

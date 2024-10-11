@@ -72,7 +72,12 @@ func (m *mockGrpcServer) FindValue(ctx context.Context, in *pb.FindValueRequest)
 }
 
 func (m *mockGrpcServer) Store(ctx context.Context, in *pb.StoreRequest) (*pb.StoreResult, error) {
-	panic("TODO")
+	key := in.Key
+	value := in.Value
+
+	m.DataStore[string(key)] = value
+
+	return &pb.StoreResult{Success: true}, nil
 }
 
 func (m *mockGrpcServer) FillRoutingTable(count int) (contacts []*contact.Contact) {
