@@ -100,7 +100,6 @@ func (n *Node) Bootstrap(rootCtx context.Context) error {
 	logger.Debug("FOUND NODES", slog.Any("nodes", closestContacts))
 
 	// Check for bucket refreshes
-
 	go n.checkBucketRefresh(rootCtx)
 
 	return nil
@@ -113,22 +112,29 @@ func (n *Node) checkBucketRefresh(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			return
-		case bck:= <-refreshChannel:
-			// TODO: get random number 0..bck.len()
-			randomNumber := bck.Len()-1
-			if randomNumber <0 {
-				continue
-			}
-
-			contactWeRequest, err := bck.GetContact(randomNumber)
-			if err != nil {
-				log.Printf("error while refreshing bucket, err=%v", err)
-			}
-
-			n.findNode(ctx, contactWeRequest)
+		case bck := <-refreshChannel:
+			n.refreshBucket(ctx, &bck)
 		case <-ticker.C:
 			n.RoutingTable.CheckBucketsForRefresh(refreshChannel)
 		}
+	}
+}
+
+func (n *Node) refreshBucket(ctx context.Context, bck *bucket.Bucket) {
+	// TODO: get random number 0..bck.len()
+	randomNumber := bck.Len() - 1
+	if randomNumber < 0 {
+		return
+	}
+
+	contactWeRequest, err := bck.GetContact(randomNumber)
+	if err != nil {
+		log.Printf("error while refreshing bucket, err=%v", err)
+	}
+
+	contacts := n.findNode(ctx, contactWeRequest)
+	for _, cnt := range contacts {
+		n.RoutingTable.AddContact(cnt)
 	}
 }
 
