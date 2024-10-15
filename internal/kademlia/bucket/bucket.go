@@ -15,9 +15,9 @@ import (
 // Bucket definition
 // contains a List
 type Bucket struct {
-	list *list.List
-	size int
-	lastRefresh		time.Time
+	list        *list.List
+	size        int
+	lastRefresh time.Time
 }
 
 // NewBucket returns a new instance of a Bucket
@@ -34,11 +34,14 @@ func (bucket *Bucket) Len() int {
 	return bucket.list.Len()
 }
 
-func (bucket *Bucket) CheckRefresh(refreshChannel chan<- Bucket) {
+func (bucket *Bucket) NeedsRefresh() bool {
 	now := time.Now()
 	nextRefresh := bucket.lastRefresh.Add(env.TRefresh)
+	return nextRefresh.Compare(now) <= 0
+}
 
-	if nextRefresh.Compare(now) <= 0 {
+func (bucket *Bucket) CheckRefresh(refreshChannel chan<- Bucket) {
+	if bucket.NeedsRefresh() {
 		// If nextRefresh has already happen, or is happening right now
 		go func() {
 			refreshChannel <- *bucket
