@@ -3,11 +3,13 @@ package node
 import (
 	"context"
 	"fmt"
+	"log"
 	"log/slog"
 	"sync"
 	"time"
 
 	"d7024e_group04/env"
+	"d7024e_group04/internal/kademlia/bucket"
 	"d7024e_group04/internal/kademlia/contact"
 	"d7024e_group04/internal/kademlia/kademliaid"
 	"d7024e_group04/internal/kademlia/model"
@@ -97,7 +99,37 @@ func (n *Node) Bootstrap(rootCtx context.Context) error {
 
 	logger.Debug("FOUND NODES", slog.Any("nodes", closestContacts))
 
+	// Check for bucket refreshes
+
+	go n.checkBucketRefresh(rootCtx)
+
 	return nil
+}
+
+func (n *Node) checkBucketRefresh(ctx context.Context) {
+	ticker := time.NewTicker(time.Minute)
+	refreshChannel := make(chan bucket.Bucket)
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case bck:= <-refreshChannel:
+			// TODO: get random number 0..bck.len()
+			randomNumber := bck.Len()-1
+			if randomNumber <0 {
+				continue
+			}
+
+			contactWeRequest, err := bck.GetContact(randomNumber)
+			if err != nil {
+				log.Printf("error while refreshing bucket, err=%v", err)
+			}
+
+			n.findNode(ctx, contactWeRequest)
+		case <-ticker.C:
+			n.RoutingTable.CheckBucketsForRefresh(refreshChannel)
+		}
+	}
 }
 
 // Put takes content of the file and outputs the hash of the object
