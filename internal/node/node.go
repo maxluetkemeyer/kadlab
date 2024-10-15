@@ -111,6 +111,7 @@ func (n *Node) checkBucketRefresh(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
+			ticker.Stop()
 			return
 		case bck := <-refreshChannel:
 			n.refreshBucket(ctx, &bck)
