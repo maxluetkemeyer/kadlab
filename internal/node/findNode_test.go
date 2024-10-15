@@ -3,6 +3,7 @@ package node
 import (
 	"context"
 	"fmt"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -95,6 +96,8 @@ func populateTestNodes() map[string]*TestNode {
 type ClientMock struct {
 	me        *contact.Contact
 	testNodes map[string]*TestNode
+	findNodeCountUntilFail int
+	findNodeSuccesfulCount atomic.Uint32
 }
 
 func newClientMock(testNodes map[string]*TestNode, me *contact.Contact) *ClientMock {
@@ -104,11 +107,26 @@ func newClientMock(testNodes map[string]*TestNode, me *contact.Contact) *ClientM
 	}
 }
 
+// Set the number of requests that will success until one fails
+// Eg. Setting it to 1 will make all requests fail, while
+//     setting it to 3 will make 2 requests work and 1 fail.
+// Setting it to 0 will disable this feature
+func (c *ClientMock) SetFindNodeSuccesfulCount(count int) {
+	c.findNodeCountUntilFail = count
+}
+
 func (c *ClientMock) SendPing(ctx context.Context, targetIpWithPort string) (*contact.Contact, error) {
 	return nil, fmt.Errorf("should not be used")
 }
 
 func (c *ClientMock) SendFindNode(ctx context.Context, contactWeRequest, contactWeAreSearchingFor *contact.Contact) ([]*contact.Contact, error) {
+	if c.findNodeCountUntilFail != 0 && int(c.findNodeSuccesfulCount.Load()) >= c.findNodeCountUntilFail-1 {
+		c.findNodeSuccesfulCount.Store(0)
+		return nil, fmt.Errorf("bad network (not a real error)")
+	} else {
+		c.findNodeSuccesfulCount.Add(1)
+	}
+
 	candidateNode := c.testNodes[contactWeRequest.Address]
 	return candidateNode.routingTable.FindClosestContacts(contactWeAreSearchingFor.ID, env.BucketSize), nil
 }
@@ -162,6 +180,57 @@ func TestFindNode(t *testing.T) {
 				t.Fatalf("wrong nodes, expected %v, got %v", expectedNodes, nodesFound)
 			}
 		}
+	})
+
+	t.Run("findNode with bad network", func(t *testing.T) {
+		expectedNodes := []*contact.Contact{}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		mockClient := newClientMock(testNodes, eighteen)
+		mockClient.SetFindNodeSuccesfulCount(1)
+
+		// We are 18
+		node := Node{
+			RoutingTable: testNodes[eighteen.Address].routingTable,
+			Client:       mockClient,
+		}
+
+		// Trying to find 13
+		nodesFound := node.findNode(ctx, thirteen)
+
+		if len(nodesFound) != len(expectedNodes) {
+			t.Fatalf("wrong number of nodes, expected %v, got %v", expectedNodes, nodesFound)
+		}
+
+		for i, node := range nodesFound {
+			if !node.ID.Equals(expectedNodes[i].ID) {
+				t.Fatalf("wrong nodes, expected %v, got %v", expectedNodes, nodesFound)
+			}
+		}
+	})
+
+	t.Run("findNode with faulty network", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		mockClient := newClientMock(testNodes, eighteen)
+		mockClient.SetFindNodeSuccesfulCount(3)
+
+		// We are 18
+		node := Node{
+			RoutingTable: testNodes[eighteen.Address].routingTable,
+			Client:       mockClient,
+		}
+
+		// Trying to find 13
+		nodesFound := node.findNode(ctx, thirteen)
+
+		if len(nodesFound) < 3 {
+			t.Fatalf("wrong number of nodes, expected at least 3, got %v", nodesFound)
+		}
+
 	})
 
 }
