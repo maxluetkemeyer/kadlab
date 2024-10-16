@@ -36,26 +36,18 @@ func (s *SimpleTTLStore) SetTTL(key string, ttl time.Duration) {
 	s.ttlOfKey[key] = time.Now().Add(ttl)
 }
 
-func (s *SimpleTTLStore) GetTTL(key string) (time.Duration, error) {
+func (s *SimpleTTLStore) GetTTL(key string) time.Duration {
 	// If key is not present, the "zero" time will be returned
 	endTime := s.ttlOfKey[key]
 
 	// If the result exceeds the maximum (or minimum) value that can be stored in a Duration,
 	// the maximum (or minimum) duration will be returned.
-	remainingTime := endTime.Sub(time.Now())
-	return remainingTime, nil
+	remainingTime := time.Until(endTime)
+	return remainingTime
 }
 
 func (s *SimpleTTLStore) isValid(key string) bool {
-	remainingTime, err := s.GetTTL(key)
+	remainingTime := s.GetTTL(key)
 
-	if err != nil {
-		return false
-	}
-
-	if remainingTime <= 0 {
-		return false
-	}
-
-	return true
+	return remainingTime > 0
 }
