@@ -26,11 +26,11 @@ type NodeHandler interface {
 type Node struct {
 	Client       network.ClientRPC
 	RoutingTable *routingtable.RoutingTable
-	Store        store.Store
+	Store        store.TTLStore
 	kNet         network.Network
 }
 
-func New(client network.ClientRPC, routingTable *routingtable.RoutingTable, store store.Store, kNet network.Network) *Node {
+func New(client network.ClientRPC, routingTable *routingtable.RoutingTable, store store.TTLStore, kNet network.Network) *Node {
 	return &Node{
 		Client:       client,
 		RoutingTable: routingTable,

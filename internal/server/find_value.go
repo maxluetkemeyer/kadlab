@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"d7024e_group04/env"
 	pb "d7024e_group04/proto"
 	"encoding/hex"
 	"fmt"
@@ -14,6 +15,9 @@ func (s *Server) FindValue(ctx context.Context, request *pb.FindValueRequest) (*
 	value, err := s.store.GetValue(key)
 
 	if err == nil {
+		// Reset TTL
+		s.store.SetTTL(key, env.TTL)
+
 		return &pb.FindValueResult{
 			Value: &pb.FindValueResult_Data{
 				Data: value,

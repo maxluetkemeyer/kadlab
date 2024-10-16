@@ -65,8 +65,8 @@ func TestNode_GetObject(t *testing.T) {
 	data := "some_data"
 	key := kademliaid.NewKademliaIDFromData(data).String()
 
-	node.Store.SetValue(key, data)
-	node2.Store.SetValue(key, data)
+	node.Store.SetValue(key, data, time.Hour)
+	node2.Store.SetValue(key, data, time.Hour)
 
 	t.Run("find data on sending node", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -97,7 +97,7 @@ func TestNode_GetObject(t *testing.T) {
 	data2 := "some_other_data"
 	key2AsKademliaID := kademliaid.NewKademliaIDFromData(data2)
 
-	node2.Store.SetValue(key2AsKademliaID.String(), data2)
+	node2.Store.SetValue(key2AsKademliaID.String(), data2, time.Hour)
 	t.Run("find data on another node", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
