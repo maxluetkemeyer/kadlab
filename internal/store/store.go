@@ -9,7 +9,7 @@ type Store interface {
 
 type TTLStore interface {
 	SetValue(key string, value string, ttl time.Duration)
-	GetValue(key string) (value string, error error)
+	GetValue(key string) (value string, err error)
 	SetTTL(key string, ttl time.Duration)
-	GetTTL(key string) (time.Duration, error)
+	GetTTL(key string) time.Duration
 }
