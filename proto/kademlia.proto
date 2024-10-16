@@ -9,6 +9,7 @@ service Kademlia {
     rpc FindNode (FindNodeRequest) returns (FindNodeResult) {}
     rpc FindValue (FindValueRequest) returns (FindValueResult) {}
     rpc Store (StoreRequest) returns (StoreResult) {}
+    rpc RefreshTTL (RefreshTTLRequest) returns (RefreshTTLResult) {}
 }
 
 message StoreRequest {
@@ -45,4 +46,13 @@ message FindValueResult {
         FindNodeResult Nodes = 1;
         string Data = 2;
     }
+}
+
+message RefreshTTLRequest {
+    bytes Key = 1;
+    Node requestingNode = 2;
+}
+
+message RefreshTTLResult {
+    bool Success = 1;
 }
