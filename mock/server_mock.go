@@ -11,6 +11,7 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 const BufSize = 1024 * 1024
@@ -78,6 +79,10 @@ func (m *mockGrpcServer) Store(ctx context.Context, in *pb.StoreRequest) (*pb.St
 	m.DataStore[string(key)] = value
 
 	return &pb.StoreResult{Success: true}, nil
+}
+
+func (m *mockGrpcServer) RefreshTTL(ctx context.Context, request *pb.RefreshTTLRequest) (*emptypb.Empty, error) {
+	panic("TODO")
 }
 
 func (m *mockGrpcServer) FillRoutingTable(count int) (contacts []*contact.Contact) {

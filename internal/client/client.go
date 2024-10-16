@@ -157,6 +157,23 @@ func (c *Client) SendStore(ctx context.Context, contactWeRequest *contact.Contac
 	return nil
 }
 
+func (c *Client) SendRefreshTTL(ctx context.Context, key string, contactWeRequest *contact.Contact) error {
+	conn, kademliaClient, err := c.connectTo(contactWeRequest.Address)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	refreshTTLRequest := &pb.RefreshTTLRequest{
+		Key:            key,
+		RequestingNode: contactToPbNode(c.me),
+	}
+
+	_, err = kademliaClient.RefreshTTL(ctx, refreshTTLRequest)
+
+	return err
+}
+
 func pbNodeToContact(node *pb.Node) *contact.Contact {
 	return contact.NewContact((kademliaid.KademliaID)(node.ID), node.IPWithPort)
 }

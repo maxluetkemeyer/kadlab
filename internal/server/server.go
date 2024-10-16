@@ -14,6 +14,7 @@ import (
 	"net"
 
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 // Server represents the node grpc server
@@ -91,4 +92,14 @@ func (s *Server) FindNode(ctx context.Context, request *pb.FindNodeRequest) (*pb
 	}
 
 	return &pb.FindNodeResult{Nodes: nodes}, nil
+}
+
+func (s *Server) RefreshTTL(ctx context.Context, request *pb.RefreshTTLRequest) (*emptypb.Empty, error) {
+	requestingNodeID := kademliaid.NewKademliaIDFromBytes([env.IDLength]byte(request.RequestingNode.ID))
+	senderContact := contact.NewContact(requestingNodeID, request.RequestingNode.IPWithPort)
+	s.routingTable.AddContact(senderContact)
+
+	s.store.SetTTL(request.Key, env.TTL)
+
+	return nil, nil
 }

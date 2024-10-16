@@ -2,6 +2,7 @@ syntax = "proto3";
 
 option go_package = "d7024e_group04/proto";
 
+import "google/protobuf/empty.proto";
 package proto;
 
 service Kademlia {
@@ -9,6 +10,12 @@ service Kademlia {
     rpc FindNode (FindNodeRequest) returns (FindNodeResult) {}
     rpc FindValue (FindValueRequest) returns (FindValueResult) {}
     rpc Store (StoreRequest) returns (StoreResult) {}
+    rpc RefreshTTL (RefreshTTLRequest) returns (google.protobuf.Empty) {}
+}
+
+message RefreshTTLRequest {
+    string Key = 1;
+    Node RequestingNode = 2;
 }
 
 message StoreRequest {

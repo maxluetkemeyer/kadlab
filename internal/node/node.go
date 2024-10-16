@@ -24,18 +24,20 @@ type NodeHandler interface {
 }
 
 type Node struct {
-	Client       network.ClientRPC
-	RoutingTable *routingtable.RoutingTable
-	Store        store.TTLStore
-	kNet         network.Network
+	Client        network.ClientRPC
+	RoutingTable  *routingtable.RoutingTable
+	Store         store.TTLStore
+	DataToRefresh map[string][]*contact.Contact
+	kNet          network.Network
 }
 
 func New(client network.ClientRPC, routingTable *routingtable.RoutingTable, store store.TTLStore, kNet network.Network) *Node {
 	return &Node{
-		Client:       client,
-		RoutingTable: routingTable,
-		Store:        store,
-		kNet:         kNet,
+		Client:        client,
+		RoutingTable:  routingTable,
+		Store:         store,
+		DataToRefresh: make(map[string][]*contact.Contact),
+		kNet:          kNet,
 	}
 }
 

@@ -95,8 +95,8 @@ func populateTestNodes() map[string]*TestNode {
 }
 
 type ClientMock struct {
-	me        *contact.Contact
-	testNodes map[string]*TestNode
+	me                     *contact.Contact
+	testNodes              map[string]*TestNode
 	findNodeCountUntilFail int
 	findNodeSuccesfulCount atomic.Uint32
 }
@@ -110,7 +110,9 @@ func newClientMock(testNodes map[string]*TestNode, me *contact.Contact) *ClientM
 
 // Set the number of requests that will success until one fails
 // Eg. Setting it to 1 will make all requests fail, while
-//     setting it to 3 will make 2 requests work and 1 fail.
+//
+//	setting it to 3 will make 2 requests work and 1 fail.
+//
 // Setting it to 0 will disable this feature
 func (c *ClientMock) SetFindNodeSuccesfulCount(count int) {
 	c.findNodeCountUntilFail = count
@@ -149,6 +151,10 @@ func (c *ClientMock) SendStore(ctx context.Context, contactWeRequest *contact.Co
 	key := kademliaid.NewKademliaIDFromData(data)
 	candidateNode.store.SetValue(key.String(), data, time.Hour)
 	return nil
+}
+
+func (c *ClientMock) SendRefreshTTL(ctx context.Context, key string, contactWeRequest *contact.Contact) error {
+	panic("TODO")
 }
 
 func TestFindNode(t *testing.T) {

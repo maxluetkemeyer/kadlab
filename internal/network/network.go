@@ -5,6 +5,8 @@ import (
 
 	"d7024e_group04/internal/kademlia/contact"
 	pb "d7024e_group04/proto"
+
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type ClientRPC interface {
@@ -12,6 +14,7 @@ type ClientRPC interface {
 	SendFindNode(ctx context.Context, contactWeRequest, contactWeAreSearchingFor *contact.Contact) ([]*contact.Contact, error)
 	SendFindValue(ctx context.Context, contactWeRequest *contact.Contact, hash string) ([]*contact.Contact, string, error)
 	SendStore(ctx context.Context, contactWeRequest *contact.Contact, data string) error
+	SendRefreshTTL(ctx context.Context, key string, contactWeRequest *contact.Contact) error
 }
 
 type ServerRPC interface {
@@ -20,6 +23,7 @@ type ServerRPC interface {
 	FindValue(ctx context.Context, request *pb.FindValueRequest) (*pb.FindValueResult, error)
 	FindNode(ctx context.Context, request *pb.FindNodeRequest) (*pb.FindNodeResult, error)
 	Store(ctx context.Context, context *pb.StoreRequest) (*pb.StoreResult, error)
+	RefreshTTL(ctx context.Context, request *pb.RefreshTTLRequest) (*emptypb.Empty, error)
 }
 
 type Network interface {
