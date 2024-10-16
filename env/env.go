@@ -1,7 +1,6 @@
 package env
 
 import (
-	"fmt"
 	"log"
 	"log/slog"
 	"os"
@@ -18,7 +17,7 @@ var NodesProxyDomain = "kademlianodes"
 var Alpha = 3 // degree of parallelism
 var RPCTimeout = 5 * time.Second
 var BootstrapTimeout = 1 * time.Minute
-var TTL = 60 * 60 * time.Second
+var TTL = 1 * time.Hour
 
 func init() {
 	log.Println("Initialize environment variables")
@@ -29,7 +28,7 @@ func init() {
 	nodesProxyDomain := os.Getenv("NODES_PROXY_DOMAIN")
 	alpha := os.Getenv("ALPHA")
 	rpcTimeoutInSeconds := os.Getenv("RPC_TIMEOUT_IN_SECONDS")
-	ttlInSeconds := os.Getenv("TTLinSeconds")
+	ttlDurationString := os.Getenv("TTLDuration")
 	_, debug := os.LookupEnv("DEBUG")
 
 	if port != "" {
@@ -76,13 +75,11 @@ func init() {
 		}
 	}
 
-	if ttlInSeconds != "" {
-		ttlInSecondsInt, err := strconv.Atoi(ttlInSeconds)
-		if err != nil {
-			log.Fatalf("invalid ttl size: %v", ttlInSeconds)
+	if ttlDurationString != "" {
+		ttlDuration, err := time.ParseDuration(ttlDurationString)
+		if err == nil {
+			TTL = ttlDuration
 		}
-		TTL = time.Duration(ttlInSecondsInt) * time.Second
-		fmt.Printf("TTL %v", TTL)
 	}
 
 	if debug {
