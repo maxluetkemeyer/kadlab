@@ -10,6 +10,7 @@ import (
 	"d7024e_group04/env"
 	"d7024e_group04/internal/kademlia/contact"
 	"d7024e_group04/internal/kademlia/kademliaid"
+	"d7024e_group04/internal/kademlia/model"
 	"d7024e_group04/internal/kademlia/routingtable"
 	"d7024e_group04/internal/server"
 	"d7024e_group04/internal/store"
@@ -134,27 +135,38 @@ func (c *ClientMock) SendFindNode(ctx context.Context, contactWeRequest, contact
 	return candidateNode.routingTable.FindClosestContacts(contactWeAreSearchingFor.ID, env.BucketSize), nil
 }
 
-func (c *ClientMock) SendFindValue(ctx context.Context, contactWeRequest *contact.Contact, hash string) ([]*contact.Contact, string, error) {
+func (c *ClientMock) SendFindValue(ctx context.Context, contactWeRequest *contact.Contact, hash string) (candidates []*contact.Contact, dataObject model.FindValueSuccessfulResponse, err error) {
 	candidateNode := c.testNodes[contactWeRequest.Address]
 
 	value, err := candidateNode.store.GetValue(hash)
 	if err != nil {
 		hashKademliaID := kademliaid.NewKademliaID(hash)
-		return candidateNode.routingTable.FindClosestContacts(hashKademliaID, env.BucketSize), "", nil
+		return candidateNode.routingTable.FindClosestContacts(hashKademliaID, env.BucketSize), dataObject, nil
 	}
-
-	return nil, value, nil
+	originalUploader, _ := candidateNode.store.GetOriginalUploader(hash)
+	dataObject = model.FindValueSuccessfulResponse{
+		DataValue:        value,
+		NodeWithValue:    candidateNode.contact,
+		OriginalUploader: originalUploader,
+	}
+	return nil, dataObject, nil
 }
 
-func (c *ClientMock) SendStore(ctx context.Context, contactWeRequest *contact.Contact, data string) error {
+func (c *ClientMock) SendStore(ctx context.Context, contactWeRequest *contact.Contact, data string, originalUploader *contact.Contact) error {
 	candidateNode := c.testNodes[contactWeRequest.Address]
 	key := kademliaid.NewKademliaIDFromData(data)
-	candidateNode.store.SetValue(key.String(), data, time.Hour)
+	candidateNode.store.SetValue(key.String(), data, time.Hour, originalUploader)
 	return nil
 }
 
 func (c *ClientMock) SendRefreshTTL(ctx context.Context, key string, contactWeRequest *contact.Contact) error {
 	panic("TODO")
+}
+
+func (c *ClientMock) SendNewStoredLocation(ctx context.Context, key string, originalUploader, newContactStoringData *contact.Contact) error {
+	candidateNode := c.testNodes[originalUploader.Address]
+	candidateNode.store.AddStoreLocation(key, newContactStoringData)
+	return nil
 }
 
 func TestFindNode(t *testing.T) {

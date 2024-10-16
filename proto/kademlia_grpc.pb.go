@@ -20,11 +20,12 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Kademlia_Ping_FullMethodName       = "/proto.Kademlia/Ping"
-	Kademlia_FindNode_FullMethodName   = "/proto.Kademlia/FindNode"
-	Kademlia_FindValue_FullMethodName  = "/proto.Kademlia/FindValue"
-	Kademlia_Store_FullMethodName      = "/proto.Kademlia/Store"
-	Kademlia_RefreshTTL_FullMethodName = "/proto.Kademlia/RefreshTTL"
+	Kademlia_Ping_FullMethodName             = "/proto.Kademlia/Ping"
+	Kademlia_FindNode_FullMethodName         = "/proto.Kademlia/FindNode"
+	Kademlia_FindValue_FullMethodName        = "/proto.Kademlia/FindValue"
+	Kademlia_Store_FullMethodName            = "/proto.Kademlia/Store"
+	Kademlia_NewStoreLocation_FullMethodName = "/proto.Kademlia/NewStoreLocation"
+	Kademlia_RefreshTTL_FullMethodName       = "/proto.Kademlia/RefreshTTL"
 )
 
 // KademliaClient is the client API for Kademlia service.
@@ -35,6 +36,7 @@ type KademliaClient interface {
 	FindNode(ctx context.Context, in *FindNodeRequest, opts ...grpc.CallOption) (*FindNodeResult, error)
 	FindValue(ctx context.Context, in *FindValueRequest, opts ...grpc.CallOption) (*FindValueResult, error)
 	Store(ctx context.Context, in *StoreRequest, opts ...grpc.CallOption) (*StoreResult, error)
+	NewStoreLocation(ctx context.Context, in *NewStoreLocationRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	RefreshTTL(ctx context.Context, in *RefreshTTLRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 }
 
@@ -86,6 +88,16 @@ func (c *kademliaClient) Store(ctx context.Context, in *StoreRequest, opts ...gr
 	return out, nil
 }
 
+func (c *kademliaClient) NewStoreLocation(ctx context.Context, in *NewStoreLocationRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, Kademlia_NewStoreLocation_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *kademliaClient) RefreshTTL(ctx context.Context, in *RefreshTTLRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(empty.Empty)
@@ -104,6 +116,7 @@ type KademliaServer interface {
 	FindNode(context.Context, *FindNodeRequest) (*FindNodeResult, error)
 	FindValue(context.Context, *FindValueRequest) (*FindValueResult, error)
 	Store(context.Context, *StoreRequest) (*StoreResult, error)
+	NewStoreLocation(context.Context, *NewStoreLocationRequest) (*empty.Empty, error)
 	RefreshTTL(context.Context, *RefreshTTLRequest) (*empty.Empty, error)
 	mustEmbedUnimplementedKademliaServer()
 }
@@ -126,6 +139,9 @@ func (UnimplementedKademliaServer) FindValue(context.Context, *FindValueRequest)
 }
 func (UnimplementedKademliaServer) Store(context.Context, *StoreRequest) (*StoreResult, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Store not implemented")
+}
+func (UnimplementedKademliaServer) NewStoreLocation(context.Context, *NewStoreLocationRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewStoreLocation not implemented")
 }
 func (UnimplementedKademliaServer) RefreshTTL(context.Context, *RefreshTTLRequest) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RefreshTTL not implemented")
@@ -223,6 +239,24 @@ func _Kademlia_Store_Handler(srv interface{}, ctx context.Context, dec func(inte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Kademlia_NewStoreLocation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NewStoreLocationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KademliaServer).NewStoreLocation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Kademlia_NewStoreLocation_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KademliaServer).NewStoreLocation(ctx, req.(*NewStoreLocationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Kademlia_RefreshTTL_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RefreshTTLRequest)
 	if err := dec(in); err != nil {
@@ -263,6 +297,10 @@ var Kademlia_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Store",
 			Handler:    _Kademlia_Store_Handler,
+		},
+		{
+			MethodName: "NewStoreLocation",
+			Handler:    _Kademlia_NewStoreLocation_Handler,
 		},
 		{
 			MethodName: "RefreshTTL",

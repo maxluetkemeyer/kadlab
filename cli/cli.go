@@ -86,7 +86,7 @@ func getCommand(ctx context.Context, node node.NodeHandler, hash string) (string
 	}
 
 	if val != nil {
-		return fmt.Sprintf("value: %v, found in node: %v", val.DataValue, val.NodeWithValue), nil
+		return fmt.Sprintf("value: %v, found in node: %v, original uploader: %v", val.DataValue, val.NodeWithValue, val.OriginalUploader), nil
 	}
 
 	if candidates != nil {

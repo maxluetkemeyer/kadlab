@@ -85,7 +85,7 @@ func (n *Node) GetObject(rootCtx context.Context, hash string) (FindValueSuccess
 		case FindValueSuccessfulResponse := <-valueChan:
 			cancel()
 			wg.Wait()
-			n.storeAtClosestNode(rootCtx, kClosest, visitedSet, hash, FindValueSuccessfulResponse.DataValue)
+			n.storeAtClosestNode(rootCtx, kClosest, visitedSet, hash, FindValueSuccessfulResponse)
 			return &FindValueSuccessfulResponse, nil, nil
 		}
 	}
@@ -117,8 +117,8 @@ func (n *Node) runParallelFindValueRequest(
 				return
 			}
 
-			if len(data) > 0 {
-				valueChan <- model.FindValueSuccessfulResponse{DataValue: data, NodeWithValue: candidates[i]}
+			if len(data.DataValue) > 0 {
+				valueChan <- model.FindValueSuccessfulResponse{DataValue: data.DataValue, NodeWithValue: candidates[i], OriginalUploader: data.OriginalUploader}
 				return
 			}
 
@@ -130,7 +130,7 @@ func (n *Node) runParallelFindValueRequest(
 }
 
 // storeAtClosestNode stores the data in the closest node seen which does not have the data
-func (n *Node) storeAtClosestNode(rootCtx context.Context, kClosest *kClosestList, visitedSet *contact.ContactSet, hash, dataToStore string) {
+func (n *Node) storeAtClosestNode(rootCtx context.Context, kClosest *kClosestList, visitedSet *contact.ContactSet, hash string, dataObject model.FindValueSuccessfulResponse) {
 	candidates := kClosest.List()
 	for _, contact := range candidates {
 		if !visitedSet.Has(contact) {
@@ -142,15 +142,18 @@ func (n *Node) storeAtClosestNode(rootCtx context.Context, kClosest *kClosestLis
 		cancel()
 
 		// data exists or node is down
-		if len(dataFromNode) > 0 || err != nil {
+		if len(dataFromNode.DataValue) > 0 || err != nil {
 			continue
 		}
 
 		ctx, cancel = context.WithTimeout(rootCtx, env.RPCTimeout)
-		err = n.Client.SendStore(ctx, contact, dataToStore)
+		err = n.Client.SendStore(ctx, contact, dataObject.DataValue, dataObject.OriginalUploader)
 		cancel()
 
 		if err == nil {
+			ctx, cancel = context.WithTimeout(rootCtx, env.RPCTimeout)
+			n.Client.SendNewStoredLocation(ctx, hash, dataObject.OriginalUploader, contact)
+			cancel()
 			return
 		}
 

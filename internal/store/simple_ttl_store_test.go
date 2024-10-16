@@ -13,7 +13,7 @@ func TestSimpleTTLStore(t *testing.T) {
 
 		want := "value0"
 
-		tStore.SetValue("key0", want, time.Hour)
+		tStore.SetValue("key0", want, time.Hour, nil)
 
 		got, err := tStore.GetValue("key0")
 
@@ -32,7 +32,7 @@ func TestSimpleTTLStore(t *testing.T) {
 
 		val := "value0"
 
-		tStore.SetValue("key0", val, time.Second*0)
+		tStore.SetValue("key0", val, time.Second*0, nil)
 
 		got, err := tStore.GetValue("key0")
 
@@ -52,7 +52,7 @@ func TestSimpleTTLStore(t *testing.T) {
 
 		val := "value0"
 
-		tStore.SetValue("key0", val, time.Hour)
+		tStore.SetValue("key0", val, time.Hour, nil)
 
 		got, err := tStore.GetValue("key0")
 

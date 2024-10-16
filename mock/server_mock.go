@@ -4,6 +4,8 @@ import (
 	"context"
 	"d7024e_group04/internal/kademlia/contact"
 	"d7024e_group04/internal/kademlia/kademliaid"
+	"d7024e_group04/internal/kademlia/model"
+	"d7024e_group04/internal/utils"
 	pb "d7024e_group04/proto"
 	"fmt"
 	"log"
@@ -23,7 +25,7 @@ type mockGrpcServer struct {
 	pb.UnimplementedKademliaServer
 	ServerContact *contact.Contact
 	RoutingTable  []*contact.Contact
-	DataStore     map[string]string
+	DataStore     map[string]model.DataWithOriginalUploader
 }
 
 func BufDialer(context.Context, string) (net.Conn, error) {
@@ -33,7 +35,7 @@ func BufDialer(context.Context, string) (net.Conn, error) {
 func StartMockGrpcServer(id kademliaid.KademliaID, address string) *mockGrpcServer {
 	server := &mockGrpcServer{
 		ServerContact: contact.NewContact(id, address),
-		DataStore:     make(map[string]string),
+		DataStore:     make(map[string]model.DataWithOriginalUploader),
 	}
 
 	Lis = bufconn.Listen(BufSize)
@@ -66,7 +68,7 @@ func (m *mockGrpcServer) FindNode(ctx context.Context, in *pb.FindNodeRequest) (
 func (m *mockGrpcServer) FindValue(ctx context.Context, in *pb.FindValueRequest) (*pb.FindValueResult, error) {
 	value, found := m.DataStore[string(in.Hash)]
 	if found {
-		return &pb.FindValueResult{Value: &pb.FindValueResult_Data{Data: value}}, nil
+		return &pb.FindValueResult{Value: &pb.FindValueResult_DataObject{DataObject: &pb.DataObject{Data: value.Data, OriginalUploader: utils.ContactToPbNode(value.Contact)}}}, nil
 	}
 
 	return &pb.FindValueResult{Value: &pb.FindValueResult_Nodes{Nodes: &pb.FindNodeResult{}}}, nil
@@ -76,12 +78,16 @@ func (m *mockGrpcServer) Store(ctx context.Context, in *pb.StoreRequest) (*pb.St
 	key := in.Key
 	value := in.Value
 
-	m.DataStore[string(key)] = value
+	m.DataStore[string(key)] = model.DataWithOriginalUploader{Data: value, Contact: utils.PbNodeToContact(in.OriginalUploader)}
 
 	return &pb.StoreResult{Success: true}, nil
 }
 
 func (m *mockGrpcServer) RefreshTTL(ctx context.Context, request *pb.RefreshTTLRequest) (*emptypb.Empty, error) {
+	panic("TODO")
+}
+
+func (m *mockGrpcServer) NewStoreLocation(ctx context.Context, request *pb.NewStoreLocationRequest) (*emptypb.Empty, error) {
 	panic("TODO")
 }
 

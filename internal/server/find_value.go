@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"d7024e_group04/env"
+	"d7024e_group04/internal/utils"
 	pb "d7024e_group04/proto"
 	"encoding/hex"
 	"fmt"
@@ -18,9 +19,14 @@ func (s *Server) FindValue(ctx context.Context, request *pb.FindValueRequest) (*
 		// Reset TTL
 		s.store.SetTTL(key, env.TTL)
 
+		originalUploader, err := s.store.GetOriginalUploader(key)
+		if err != nil {
+			panic("this should not happen, something is very wrong :(")
+		}
+
 		return &pb.FindValueResult{
-			Value: &pb.FindValueResult_Data{
-				Data: value,
+			Value: &pb.FindValueResult_DataObject{
+				DataObject: &pb.DataObject{Data: value, OriginalUploader: utils.ContactToPbNode(originalUploader)},
 			},
 		}, nil
 	}

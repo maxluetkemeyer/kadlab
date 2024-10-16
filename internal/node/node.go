@@ -24,20 +24,21 @@ type NodeHandler interface {
 }
 
 type Node struct {
-	Client        network.ClientRPC
-	RoutingTable  *routingtable.RoutingTable
-	Store         store.TTLStore
-	DataToRefresh map[string][]*contact.Contact
-	kNet          network.Network
+	sync.RWMutex
+	Client       network.ClientRPC
+	RoutingTable *routingtable.RoutingTable
+	Store        store.TTLStore
+	RefreshChan  chan model.RefreshTTLRequest
+	kNet         network.Network
 }
 
 func New(client network.ClientRPC, routingTable *routingtable.RoutingTable, store store.TTLStore, kNet network.Network) *Node {
 	return &Node{
-		Client:        client,
-		RoutingTable:  routingTable,
-		Store:         store,
-		DataToRefresh: make(map[string][]*contact.Contact),
-		kNet:          kNet,
+		Client:       client,
+		RoutingTable: routingTable,
+		Store:        store,
+		RefreshChan:  make(chan model.RefreshTTLRequest, 10),
+		kNet:         kNet,
 	}
 }
 
@@ -99,6 +100,8 @@ func (n *Node) Bootstrap(rootCtx context.Context) error {
 
 	logger.Debug("FOUND NODES", slog.Any("nodes", closestContacts))
 
+	go n.TTLRefresher(rootCtx)
+
 	return nil
 }
 
@@ -118,9 +121,11 @@ func (n *Node) PutObject(ctx context.Context, data string) (hashAsHex string, er
 
 		go func() {
 			defer wg.Done()
-			err := n.Client.SendStore(ctx, contact, data)
+			err := n.Client.SendStore(ctx, contact, data, n.Me())
 			if err != nil {
 				errChan <- err
+			} else {
+				n.Store.AddStoreLocation(hash.String(), contact)
 			}
 		}()
 	}
@@ -131,6 +136,8 @@ func (n *Node) PutObject(ctx context.Context, data string) (hashAsHex string, er
 	for err := range errChan {
 		slog.Warn("SendStore error", slog.Any("err", err))
 	}
+
+	n.RefreshChan <- model.RefreshTTLRequest{Key: hash.String(), TTL: env.TTL}
 
 	return hash.String(), nil
 }

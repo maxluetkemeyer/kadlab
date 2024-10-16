@@ -5,6 +5,7 @@ import (
 	"d7024e_group04/env"
 	"d7024e_group04/internal/kademlia/contact"
 	"d7024e_group04/internal/kademlia/kademliaid"
+	"d7024e_group04/internal/kademlia/model"
 	"d7024e_group04/mock"
 	"reflect"
 	"testing"
@@ -80,7 +81,7 @@ func TestClient_SendFindValue(t *testing.T) {
 	t.Run("Data exists on node", func(t *testing.T) {
 		value := "some_value"
 		hash := kademliaid.NewKademliaIDFromData(value)
-		server.DataStore[string(hash.Bytes())] = value
+		server.DataStore[string(hash.Bytes())] = model.DataWithOriginalUploader{Data: value, Contact: clientContact}
 
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 		go TimeoutContext(ctx, cancel)
@@ -95,7 +96,7 @@ func TestClient_SendFindValue(t *testing.T) {
 			t.Fatalf("expected no candidates to be returned, got %v", len(candidates))
 		}
 
-		if data != value {
+		if data.DataValue != value {
 			t.Fatalf("invalid data returned, got %v, expected %v", data, value)
 		}
 	})
@@ -112,7 +113,7 @@ func TestClient_SendFindValue(t *testing.T) {
 			t.Fatalf("failed to send find value request, %v", err)
 		}
 
-		if len(data) != 0 {
+		if len(data.DataValue) != 0 {
 			t.Fatalf("expected no data to be found, got %v", data)
 		}
 
@@ -136,7 +137,7 @@ func TestClient_Store(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 		go TimeoutContext(ctx, cancel)
 
-		err := client.SendStore(ctx, targetNode, value)
+		err := client.SendStore(ctx, targetNode, value, clientContact)
 
 		if err != nil {
 			t.Fatalf("failed to send store request")
@@ -144,7 +145,7 @@ func TestClient_Store(t *testing.T) {
 
 		serverValue := server.DataStore[string(hash.Bytes())]
 
-		if serverValue != value {
+		if serverValue.Data != value {
 			t.Fatalf("data stored in server is not same as sent data, expected %v, got %v", value, serverValue)
 		}
 
