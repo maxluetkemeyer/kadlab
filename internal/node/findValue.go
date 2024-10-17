@@ -16,6 +16,7 @@ func (n *Node) GetObject(rootCtx context.Context, hash string) (FindValueSuccess
 	value, err := n.Store.GetValue(hash)
 
 	if err == nil {
+		n.Store.SetTTL(hash, env.TTL)
 		return &model.FindValueSuccessfulResponse{DataValue: value, NodeWithValue: n.RoutingTable.Me()}, nil, nil
 	}
 

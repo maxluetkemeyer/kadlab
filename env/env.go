@@ -1,6 +1,7 @@
 package env
 
 import (
+	"fmt"
 	"log"
 	"log/slog"
 	"os"
@@ -18,6 +19,7 @@ var Alpha = 3 // degree of parallelism
 var RPCTimeout = 5 * time.Second
 var BootstrapTimeout = 1 * time.Minute
 var TRefresh = 3600 * time.Second
+var TTL = 60 * 60 * time.Second
 
 func init() {
 	log.Println("Initialize environment variables")
@@ -28,6 +30,7 @@ func init() {
 	nodesProxyDomain := os.Getenv("NODES_PROXY_DOMAIN")
 	alpha := os.Getenv("ALPHA")
 	rpcTimeoutInSeconds := os.Getenv("RPC_TIMEOUT_IN_SECONDS")
+	ttlInSeconds := os.Getenv("TTLinSeconds")
 	_, debug := os.LookupEnv("DEBUG")
 
 	if port != "" {
@@ -72,6 +75,15 @@ func init() {
 		if err == nil {
 			RPCTimeout = time.Duration(rpcTimeoutInt) * time.Second
 		}
+	}
+
+	if ttlInSeconds != "" {
+		ttlInSecondsInt, err := strconv.Atoi(ttlInSeconds)
+		if err != nil {
+			log.Fatalf("invalid ttl size: %v", ttlInSeconds)
+		}
+		TTL = time.Duration(ttlInSecondsInt) * time.Second
+		fmt.Printf("TTL %v", TTL)
 	}
 
 	if debug {
