@@ -18,6 +18,7 @@ var NodesProxyDomain = "kademlianodes"
 var Alpha = 3 // degree of parallelism
 var RPCTimeout = 5 * time.Second
 var BootstrapTimeout = 1 * time.Minute
+var TRefresh = 3600 * time.Second
 var TTL = 60 * 60 * time.Second
 
 func init() {

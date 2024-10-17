@@ -66,6 +66,7 @@ func (kClosestList *kClosestList) remove(target *contact.Contact) {
 func (kClosestList *kClosestList) addContact(contact *contact.Contact, referenceContact *contact.Contact) {
 	contact.CalcDistance(referenceContact.ID)
 
+
 	if kClosestList.Has(contact) {
 		return
 	}

@@ -51,6 +51,8 @@ func (routingTable *RoutingTable) FindClosestContacts(target kademliaid.Kademlia
 	routingTable.mut.RLock()
 	bucketIndex := routingTable.getBucketIndex(target)
 	bucket := routingTable.buckets[bucketIndex]
+	// Bucket is being accessed, so refresh it
+	bucket.Refresh()
 
 	// Get all contacts in the bucket with already calculated distances
 	candidates = append(candidates, bucket.GetContactAndCalcDistance(target)...)
@@ -114,4 +116,11 @@ func (routingTable *RoutingTable) Me() *contact.Contact {
 	routingTable.mut.RLock()
 	defer routingTable.mut.RUnlock()
 	return routingTable.me
+}
+
+
+func (rt *RoutingTable) CheckBucketsForRefresh(refreshChannel chan<- bucket.Bucket) {
+	for _, bck := range rt.buckets {
+		bck.CheckRefresh(refreshChannel)
+	}
 }
