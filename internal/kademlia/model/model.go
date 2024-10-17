@@ -8,7 +8,7 @@ import (
 type FindValueSuccessfulResponse struct {
 	DataValue        string           `json:"Value"`
 	NodeWithValue    *contact.Contact `json:"Node"`
-	OriginalUploader *contact.Contact
+	OriginalUploader *contact.Contact `json:"OriginalUploader"`
 }
 
 type DataWithOriginalUploader struct {
