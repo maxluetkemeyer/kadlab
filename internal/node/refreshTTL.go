@@ -34,6 +34,11 @@ func (n *Node) RefreshTTL(ctx context.Context, key string, ttl time.Duration) {
 			contacts := n.Store.GetStoreLocations(key)
 			n.RWMutex.RUnlock()
 
+			// len is 0 since this hash is no longer refreshed
+			if len(contacts) == 0 {
+				return
+			}
+
 			for _, contact := range contacts {
 				ctx, cancel := context.WithTimeout(ctx, env.RPCTimeout)
 				defer cancel()
