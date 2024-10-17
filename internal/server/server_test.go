@@ -221,7 +221,7 @@ func TestServer_Store(t *testing.T) {
 			t.Fatalf("GetValue failed, %v", err)
 		}
 
-		if dataFromServer != data {
+		if dataFromServer.Data != data {
 			t.Fatalf("server stored wrong data, expected %v, got %v", data, dataFromServer)
 		}
 	})

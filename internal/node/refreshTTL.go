@@ -7,6 +7,10 @@ import (
 	"time"
 )
 
+func (n *Node) Forget(hash string) {
+	n.Store.RemoveRefreshContact(hash)
+}
+
 func (n *Node) TTLRefresher(ctx context.Context) {
 	for {
 		select {

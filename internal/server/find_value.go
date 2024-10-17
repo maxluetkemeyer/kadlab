@@ -13,20 +13,15 @@ import (
 func (s *Server) FindValue(ctx context.Context, request *pb.FindValueRequest) (*pb.FindValueResult, error) {
 	key := hex.EncodeToString(request.Hash)
 
-	value, err := s.store.GetValue(key)
+	dataObject, err := s.store.GetValue(key)
 
 	if err == nil {
 		// Reset TTL
 		s.store.SetTTL(key, env.TTL)
 
-		originalUploader, err := s.store.GetOriginalUploader(key)
-		if err != nil {
-			panic("this should not happen, something is very wrong :(")
-		}
-
 		return &pb.FindValueResult{
 			Value: &pb.FindValueResult_DataObject{
-				DataObject: &pb.DataObject{Data: value, OriginalUploader: utils.ContactToPbNode(originalUploader)},
+				DataObject: &pb.DataObject{Data: dataObject.Data, OriginalUploader: utils.ContactToPbNode(dataObject.Contact)},
 			},
 		}, nil
 	}

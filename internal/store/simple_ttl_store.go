@@ -2,6 +2,7 @@ package store
 
 import (
 	"d7024e_group04/internal/kademlia/contact"
+	"d7024e_group04/internal/kademlia/model"
 	"fmt"
 	"sync"
 	"time"
@@ -29,9 +30,9 @@ func (s *SimpleTTLStore) SetValue(key string, value string, ttl time.Duration, u
 }
 
 // Does not reset the TTL!
-func (s *SimpleTTLStore) GetValue(key string) (value string, error error) {
+func (s *SimpleTTLStore) GetValue(key string) (dataObject model.DataWithOriginalUploader, err error) {
 	if !s.isValid(key) {
-		return "", fmt.Errorf("invalid key (too old or not stored)")
+		return dataObject, fmt.Errorf("invalid key (too old or not stored)")
 	}
 
 	return s.store.GetValue(key)
@@ -69,6 +70,12 @@ func (s *SimpleTTLStore) AddStoreLocation(key string, contactToAdd *contact.Cont
 		s.DataRefreshContacts[key] = append(s.DataRefreshContacts[key], contactToAdd)
 	}
 
+	s.RWMutex.Unlock()
+}
+
+func (s *SimpleTTLStore) RemoveRefreshContact(key string) {
+	s.RWMutex.Lock()
+	delete(s.DataRefreshContacts, key)
 	s.RWMutex.Unlock()
 }
 

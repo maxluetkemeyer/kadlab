@@ -69,10 +69,9 @@ func (m *mockGrpcServer) FindNode(ctx context.Context, in *pb.FindNodeRequest) (
 
 func (m *mockGrpcServer) FindValue(ctx context.Context, in *pb.FindValueRequest) (*pb.FindValueResult, error) {
 	hash := hex.EncodeToString(in.Hash)
-	value, err := m.TTLStore.GetValue(hash)
+	dataObject, err := m.TTLStore.GetValue(hash)
 	if err == nil {
-		originalUploader, _ := m.TTLStore.GetOriginalUploader(hash)
-		return &pb.FindValueResult{Value: &pb.FindValueResult_DataObject{DataObject: &pb.DataObject{Data: value, OriginalUploader: utils.ContactToPbNode(originalUploader)}}}, nil
+		return &pb.FindValueResult{Value: &pb.FindValueResult_DataObject{DataObject: &pb.DataObject{Data: dataObject.Data, OriginalUploader: utils.ContactToPbNode(dataObject.Contact)}}}, nil
 	}
 
 	return &pb.FindValueResult{Value: &pb.FindValueResult_Nodes{Nodes: &pb.FindNodeResult{}}}, nil

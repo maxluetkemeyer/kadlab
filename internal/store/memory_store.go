@@ -27,7 +27,7 @@ func (store *MemoryStore) SetValue(key string, value string, uploader *contact.C
 	store.myMap[key] = model.DataWithOriginalUploader{Data: value, Contact: uploader}
 }
 
-func (store *MemoryStore) GetValue(key string) (string, error) {
+func (store *MemoryStore) GetValue(key string) (dataObject model.DataWithOriginalUploader, err error) {
 	store.mut.RLock()
 	defer store.mut.RUnlock()
 
@@ -35,10 +35,10 @@ func (store *MemoryStore) GetValue(key string) (string, error) {
 
 	if !found {
 		err := fmt.Errorf("value not found for key: %s", key)
-		return "", err
+		return dataObject, err
 	}
 
-	return object.Data, nil
+	return object, nil
 }
 
 func (store *MemoryStore) GetOriginalUploader(key string) (*contact.Contact, error) {

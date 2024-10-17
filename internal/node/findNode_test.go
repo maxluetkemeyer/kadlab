@@ -143,11 +143,10 @@ func (c *ClientMock) SendFindValue(ctx context.Context, contactWeRequest *contac
 		hashKademliaID := kademliaid.NewKademliaID(hash)
 		return candidateNode.routingTable.FindClosestContacts(hashKademliaID, env.BucketSize), dataObject, nil
 	}
-	originalUploader, _ := candidateNode.store.GetOriginalUploader(hash)
 	dataObject = model.FindValueSuccessfulResponse{
-		DataValue:        value,
+		DataValue:        value.Data,
 		NodeWithValue:    candidateNode.contact,
-		OriginalUploader: originalUploader,
+		OriginalUploader: value.Contact,
 	}
 	return nil, dataObject, nil
 }

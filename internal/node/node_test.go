@@ -138,7 +138,7 @@ func TestNode_GetObject(t *testing.T) {
 			if err != nil {
 				continue
 			}
-			if val == data2 {
+			if val.Data == data2 {
 				return
 			}
 		}

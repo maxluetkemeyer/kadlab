@@ -147,7 +147,7 @@ func TestClient_Store(t *testing.T) {
 			t.Fatalf("err: %v", err)
 		}
 
-		if serverValue != value {
+		if serverValue.Data != value {
 			t.Fatalf("data stored in server is not same as sent data, expected %v, got %v", value, serverValue)
 		}
 

@@ -23,7 +23,7 @@ func TestSimpleTTLStore(t *testing.T) {
 			log.Fatalf("error getting value: %v", err)
 		}
 
-		if got != want {
+		if got.Data != want {
 			log.Fatalf("got %q, want %q", got, want)
 		}
 	})
@@ -38,7 +38,7 @@ func TestSimpleTTLStore(t *testing.T) {
 
 		got, err := tStore.GetValue("key0")
 
-		if got != "" {
+		if got.Data != "" {
 			log.Fatalf("should get empty string, but got %v", got)
 		}
 
@@ -62,7 +62,7 @@ func TestSimpleTTLStore(t *testing.T) {
 			log.Fatalf("error getting value: %v", err)
 		}
 
-		if got != val {
+		if got.Data != val {
 			log.Fatalf("TTL should be enough: got %q, want %q", got, val)
 		}
 
@@ -70,7 +70,7 @@ func TestSimpleTTLStore(t *testing.T) {
 
 		gotAfterExpiration, errAfterExpiration := tStore.GetValue("key0")
 
-		if gotAfterExpiration != "" {
+		if gotAfterExpiration.Data != "" {
 			log.Fatalf("should get empty string, but got %v", gotAfterExpiration)
 		}
 
@@ -125,4 +125,23 @@ func TestSimpleTTLStore_StoreLocations(t *testing.T) {
 
 	}
 
+}
+
+func TestSimpleTTLStore_RemoveRefreshContact(t *testing.T) {
+	memStore := NewMemoryStore()
+	tStore := NewSimpleTTLStore(memStore)
+	replicateContact := contact.NewContact(kademliaid.NewRandomKademliaID(), "address2")
+
+	key := "key0"
+	tStore.AddStoreLocation(key, replicateContact)
+
+	if len(tStore.GetStoreLocations(key)) != 1 {
+		t.Fatalf("invalid size, expected 1 got %v", len(tStore.GetStoreLocations(key)))
+	}
+
+	tStore.RemoveRefreshContact(key)
+
+	if len(tStore.GetStoreLocations(key)) != 0 {
+		t.Fatalf("invalid size, expected 0 got %v", len(tStore.GetStoreLocations(key)))
+	}
 }

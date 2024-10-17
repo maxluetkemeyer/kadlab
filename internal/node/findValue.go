@@ -13,11 +13,11 @@ import (
 // Get takes hash and outputs the contents of the object and the node it was retrieved
 func (n *Node) GetObject(rootCtx context.Context, hash string) (FindValueSuccessfulResponse *model.FindValueSuccessfulResponse, candidates []*contact.Contact, err error) {
 	// check for value in our own store first
-	value, err := n.Store.GetValue(hash)
+	dataObject, err := n.Store.GetValue(hash)
 
 	if err == nil {
 		n.Store.SetTTL(hash, env.TTL)
-		return &model.FindValueSuccessfulResponse{DataValue: value, NodeWithValue: n.RoutingTable.Me()}, nil, nil
+		return &model.FindValueSuccessfulResponse{DataValue: dataObject.Data, NodeWithValue: n.RoutingTable.Me()}, nil, nil
 	}
 
 	// search the network

@@ -21,6 +21,7 @@ type NodeHandler interface {
 	Bootstrap(rootCtx context.Context) error
 	PutObject(ctx context.Context, data string) (hashAsHex string, err error)
 	GetObject(rootCtx context.Context, hash string) (FindValueSuccessfulResponse *model.FindValueSuccessfulResponse, candidates []*contact.Contact, err error)
+	Forget(hash string)
 }
 
 type Node struct {

@@ -21,7 +21,7 @@ func TestMemoryStore(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if got != want {
+		if got.Data != want {
 			t.Errorf("got %s, want %s", got, want)
 		}
 
