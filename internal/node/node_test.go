@@ -146,3 +146,40 @@ func TestNode_GetObject(t *testing.T) {
 		t.Fatalf("did not replicate correctly")
 	})
 }
+
+func TestNode_pingIPsAndGetContact(t *testing.T) {
+	testNodes := populateTestNodes()
+
+	node := Node{
+		RoutingTable: testNodes[":18"].routingTable,
+		Client:       newClientMock(testNodes, testNodes[":18"].contact),
+	}
+
+	ips := []string{"invalid_ip", one.Address}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	contact, err := node.pingIPsAndGetContact(ctx, ips)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	if contact.Address != one.Address {
+		t.Fatalf("invalid ip returned, expected %v, got %v", one.Address, contact.Address)
+	}
+}
+
+func TestNode_removeAddress(t *testing.T) {
+	ips := []string{"127.0.0.1", "127.0.0.2"}
+
+	filteredIps := removeAddress(ips, "127.0.0.1:50051")
+	if len(filteredIps) != 1 {
+		t.Fatalf("wrong number of ips, expected 1, got %v", len(filteredIps))
+	}
+
+	if filteredIps[0] != ips[1] {
+		t.Fatalf("invalid ip, expected %v, got %v", ips[1], filteredIps)
+	}
+
+}

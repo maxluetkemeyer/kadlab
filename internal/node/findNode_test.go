@@ -2,6 +2,7 @@ package node
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync/atomic"
 	"testing"
@@ -120,7 +121,14 @@ func (c *ClientMock) SetFindNodeSuccesfulCount(count int) {
 }
 
 func (c *ClientMock) SendPing(ctx context.Context, targetIpWithPort string) (*contact.Contact, error) {
-	return nil, fmt.Errorf("should not be used")
+	targetIpWithoutPort := targetIpWithPort[:len(targetIpWithPort)-6]
+
+	for _, node := range c.testNodes {
+		if node.contact.Address == targetIpWithoutPort {
+			return node.contact, nil
+		}
+	}
+	return nil, errors.New("unable to ping any contacts")
 }
 
 func (c *ClientMock) SendFindNode(ctx context.Context, contactWeRequest, contactWeAreSearchingFor *contact.Contact) ([]*contact.Contact, error) {
