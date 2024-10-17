@@ -5,7 +5,6 @@ import (
 	"d7024e_group04/env"
 	"d7024e_group04/internal/kademlia/contact"
 	"d7024e_group04/internal/kademlia/kademliaid"
-	"d7024e_group04/internal/kademlia/model"
 	"d7024e_group04/mock"
 	"reflect"
 	"testing"
@@ -81,8 +80,7 @@ func TestClient_SendFindValue(t *testing.T) {
 	t.Run("Data exists on node", func(t *testing.T) {
 		value := "some_value"
 		hash := kademliaid.NewKademliaIDFromData(value)
-		server.DataStore[string(hash.Bytes())] = model.DataWithOriginalUploader{Data: value, Contact: clientContact}
-
+		server.TTLStore.SetValue(hash.String(), value, time.Hour, clientContact)
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 		go TimeoutContext(ctx, cancel)
 
@@ -143,10 +141,69 @@ func TestClient_Store(t *testing.T) {
 			t.Fatalf("failed to send store request")
 		}
 
-		serverValue := server.DataStore[string(hash.Bytes())]
+		serverValue, err := server.TTLStore.GetValue(hash.String())
 
-		if serverValue.Data != value {
+		if err != nil {
+			t.Fatalf("err: %v", err)
+		}
+
+		if serverValue != value {
 			t.Fatalf("data stored in server is not same as sent data, expected %v, got %v", value, serverValue)
+		}
+
+	})
+}
+
+func TestClient_SendRefreshTTL(t *testing.T) {
+	server := mock.StartMockGrpcServer(serverID, serverAddress)
+	targetNode := contact.NewContact(serverID, mock.MockServerAddress)
+
+	clientContact := contact.NewContact(clientID, clientAddress)
+	client := NewClient(clientContact, grpc.WithContextDialer(mock.BufDialer))
+
+	key := "some_key"
+	t.Run("send refreshTTL", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+		go TimeoutContext(ctx, cancel)
+
+		err := client.SendRefreshTTL(ctx, key, targetNode)
+		if err != nil {
+			t.Fatalf("err: %v", err)
+		}
+
+		ttl := server.TTLStore.GetTTL(key)
+		if ttl.Seconds() <= 0 {
+			t.Fatalf("invalid ttl: %v", ttl)
+		}
+	})
+}
+
+func TestClient_SendNewStoredLocation(t *testing.T) {
+	server := mock.StartMockGrpcServer(serverID, serverAddress)
+	targetNode := contact.NewContact(serverID, mock.MockServerAddress)
+
+	clientContact := contact.NewContact(clientID, clientAddress)
+	client := NewClient(clientContact, grpc.WithContextDialer(mock.BufDialer))
+
+	key := "some_key"
+
+	t.Run("add new stored location", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+		go TimeoutContext(ctx, cancel)
+
+		err := client.SendNewStoredLocation(ctx, key, targetNode, clientContact)
+		if err != nil {
+			t.Fatalf("err: %v", err)
+		}
+
+		locationContacts := server.TTLStore.GetStoreLocations(key)
+
+		if len(locationContacts) != 1 {
+			t.Fatalf("invalid number of locations: %v", locationContacts)
+		}
+
+		if !locationContacts[0].ID.Equals(clientContact.ID) {
+			t.Fatalf("invalid id, expected %v, got %v", clientContact.ID, locationContacts[0].ID)
 		}
 
 	})

@@ -4,12 +4,14 @@ import (
 	"context"
 	"d7024e_group04/internal/kademlia/contact"
 	"d7024e_group04/internal/kademlia/kademliaid"
-	"d7024e_group04/internal/kademlia/model"
+	"d7024e_group04/internal/store"
 	"d7024e_group04/internal/utils"
 	pb "d7024e_group04/proto"
+	"encoding/hex"
 	"fmt"
 	"log"
 	"net"
+	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
@@ -25,7 +27,7 @@ type mockGrpcServer struct {
 	pb.UnimplementedKademliaServer
 	ServerContact *contact.Contact
 	RoutingTable  []*contact.Contact
-	DataStore     map[string]model.DataWithOriginalUploader
+	TTLStore      store.TTLStore
 }
 
 func BufDialer(context.Context, string) (net.Conn, error) {
@@ -35,7 +37,7 @@ func BufDialer(context.Context, string) (net.Conn, error) {
 func StartMockGrpcServer(id kademliaid.KademliaID, address string) *mockGrpcServer {
 	server := &mockGrpcServer{
 		ServerContact: contact.NewContact(id, address),
-		DataStore:     make(map[string]model.DataWithOriginalUploader),
+		TTLStore:      store.NewSimpleTTLStore(store.NewMemoryStore()),
 	}
 
 	Lis = bufconn.Listen(BufSize)
@@ -66,29 +68,32 @@ func (m *mockGrpcServer) FindNode(ctx context.Context, in *pb.FindNodeRequest) (
 }
 
 func (m *mockGrpcServer) FindValue(ctx context.Context, in *pb.FindValueRequest) (*pb.FindValueResult, error) {
-	value, found := m.DataStore[string(in.Hash)]
-	if found {
-		return &pb.FindValueResult{Value: &pb.FindValueResult_DataObject{DataObject: &pb.DataObject{Data: value.Data, OriginalUploader: utils.ContactToPbNode(value.Contact)}}}, nil
+	hash := hex.EncodeToString(in.Hash)
+	value, err := m.TTLStore.GetValue(hash)
+	if err == nil {
+		originalUploader, _ := m.TTLStore.GetOriginalUploader(hash)
+		return &pb.FindValueResult{Value: &pb.FindValueResult_DataObject{DataObject: &pb.DataObject{Data: value, OriginalUploader: utils.ContactToPbNode(originalUploader)}}}, nil
 	}
 
 	return &pb.FindValueResult{Value: &pb.FindValueResult_Nodes{Nodes: &pb.FindNodeResult{}}}, nil
 }
 
 func (m *mockGrpcServer) Store(ctx context.Context, in *pb.StoreRequest) (*pb.StoreResult, error) {
-	key := in.Key
+	key := hex.EncodeToString(in.Key)
 	value := in.Value
-
-	m.DataStore[string(key)] = model.DataWithOriginalUploader{Data: value, Contact: utils.PbNodeToContact(in.OriginalUploader)}
+	m.TTLStore.SetValue(string(key), value, time.Hour, utils.PbNodeToContact(in.OriginalUploader))
 
 	return &pb.StoreResult{Success: true}, nil
 }
 
 func (m *mockGrpcServer) RefreshTTL(ctx context.Context, request *pb.RefreshTTLRequest) (*emptypb.Empty, error) {
-	panic("TODO")
+	m.TTLStore.SetTTL(request.Key, time.Hour)
+	return nil, nil
 }
 
 func (m *mockGrpcServer) NewStoreLocation(ctx context.Context, request *pb.NewStoreLocationRequest) (*emptypb.Empty, error) {
-	panic("TODO")
+	m.TTLStore.AddStoreLocation(request.Key, utils.PbNodeToContact(request.NewStoreLocationContact))
+	return nil, nil
 }
 
 func (m *mockGrpcServer) FillRoutingTable(count int) (contacts []*contact.Contact) {

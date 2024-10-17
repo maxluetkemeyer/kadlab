@@ -243,6 +243,61 @@ func TestServer_Store(t *testing.T) {
 
 }
 
+func TestServer_RefreshTTL(t *testing.T) {
+	srv := initServer()
+	key := "hash_key"
+
+	ttlRequest := &pb.RefreshTTLRequest{
+		Key:            key,
+		RequestingNode: &pb.Node{ID: SenderID.Bytes(), IPWithPort: SenderAddress},
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	go TimeoutContext(ctx, cancel)
+
+	_, err := srv.RefreshTTL(ctx, ttlRequest)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	ttl := srv.store.GetTTL(key)
+	if ttl.Seconds() <= 0 {
+		t.Fatalf("invalid ttl, %v", ttl)
+	}
+
+}
+
+func TestServer_NewStoreLocation(t *testing.T) {
+	srv := initServer()
+	key := "hash_key"
+
+	newStoreContact := contact.NewContact(kademliaid.NewRandomKademliaID(), "address")
+
+	storeLocRequest := &pb.NewStoreLocationRequest{
+		Key:                     key,
+		NewStoreLocationContact: utils.ContactToPbNode(newStoreContact),
+		RequestingNode:          &pb.Node{ID: SenderID.Bytes(), IPWithPort: SenderAddress},
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	go TimeoutContext(ctx, cancel)
+
+	_, err := srv.NewStoreLocation(ctx, storeLocRequest)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	locationContacts := srv.store.GetStoreLocations(key)
+
+	if len(locationContacts) != 1 {
+		t.Fatalf("invalid number of contacts")
+	}
+
+	if !locationContacts[0].ID.Equals(newStoreContact.ID) {
+		t.Fatalf("invalid contact, expected %v, got %v", locationContacts[0], newStoreContact)
+	}
+}
+
 func fillRoutingTable(count int, routingTable *routingtable.RoutingTable, blacklist kademliaid.KademliaID) {
 	var kID kademliaid.KademliaID
 
