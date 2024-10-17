@@ -2,9 +2,11 @@ package node
 
 import (
 	"context"
+	"crypto/rand"
 	"fmt"
 	"log"
 	"log/slog"
+	"math/big"
 	"sync"
 	"time"
 
@@ -123,7 +125,15 @@ func (n *Node) checkBucketRefresh(ctx context.Context) {
 
 func (n *Node) refreshBucket(ctx context.Context, bck *bucket.Bucket) {
 	// TODO: get random number 0..bck.len()
-	randomNumber := bck.Len() - 1
+	bigRandomNumber, err := rand.Int(rand.Reader, big.NewInt(int64(bck.Len())))
+	if err != nil {
+		log.Printf("unable to generate random number, err=%v", err)
+		log.Printf("using bck.Len()-1 as random number")
+		bigRandomNumber = big.NewInt(int64(bck.Len()-1))
+	}
+
+	randomNumber := int(bigRandomNumber.Int64())
+
 	if randomNumber < 0 {
 		return
 	}
