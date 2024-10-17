@@ -18,6 +18,7 @@ var Alpha = 3 // degree of parallelism
 var RPCTimeout = 5 * time.Second
 var BootstrapTimeout = 1 * time.Minute
 var TTL = 1 * time.Hour
+var TRefresh = 3600 * time.Second
 
 func init() {
 	log.Println("Initialize environment variables")

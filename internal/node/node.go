@@ -2,12 +2,16 @@ package node
 
 import (
 	"context"
+	"crypto/rand"
 	"fmt"
+	"log"
 	"log/slog"
+	"math/big"
 	"sync"
 	"time"
 
 	"d7024e_group04/env"
+	"d7024e_group04/internal/kademlia/bucket"
 	"d7024e_group04/internal/kademlia/contact"
 	"d7024e_group04/internal/kademlia/kademliaid"
 	"d7024e_group04/internal/kademlia/model"
@@ -103,7 +107,52 @@ func (n *Node) Bootstrap(rootCtx context.Context) error {
 
 	go n.TTLRefresher(rootCtx)
 
+	// Check for bucket refreshes
+	go n.checkBucketRefresh(rootCtx)
+
 	return nil
+}
+
+func (n *Node) checkBucketRefresh(ctx context.Context) {
+	ticker := time.NewTicker(time.Minute)
+	refreshChannel := make(chan bucket.Bucket)
+	for {
+		select {
+		case <-ctx.Done():
+			ticker.Stop()
+			return
+		case bck := <-refreshChannel:
+			n.refreshBucket(ctx, &bck)
+		case <-ticker.C:
+			n.RoutingTable.CheckBucketsForRefresh(refreshChannel)
+		}
+	}
+}
+
+func (n *Node) refreshBucket(ctx context.Context, bck *bucket.Bucket) {
+	// TODO: get random number 0..bck.len()
+	bigRandomNumber, err := rand.Int(rand.Reader, big.NewInt(int64(bck.Len())))
+	if err != nil {
+		log.Printf("unable to generate random number, err=%v", err)
+		log.Printf("using bck.Len()-1 as random number")
+		bigRandomNumber = big.NewInt(int64(bck.Len() - 1))
+	}
+
+	randomNumber := int(bigRandomNumber.Int64())
+
+	if randomNumber < 0 {
+		return
+	}
+
+	contactWeRequest, err := bck.GetContact(randomNumber)
+	if err != nil {
+		log.Printf("error while refreshing bucket, err=%v", err)
+	}
+
+	contacts := n.findNode(ctx, contactWeRequest)
+	for _, cnt := range contacts {
+		n.RoutingTable.AddContact(cnt)
+	}
 }
 
 // Put takes content of the file and outputs the hash of the object

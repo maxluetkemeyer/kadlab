@@ -12,8 +12,8 @@ import (
 
 // TODO: Split up into multiple check functions and test them isolated
 func (bucket *Bucket) AddContact(newContact *contact.Contact, client network.ClientRPC) {
+	bucket.Refresh()
 
-	// Is the new contact already stored in the list?
 	// Paper: "If the sending node already exists in the recipient’s k-bucket,
 	// the recipient moves it to the tail of the list."
 	for listContact := bucket.list.Front(); listContact != nil; listContact = listContact.Next() {
