@@ -24,7 +24,7 @@ services:
       - ALPHA
       - RPC_TIMEOUT_IN_SECONDS
       - DEBUG=true
-      - TTLinSeconds=30
+      - TTLDuration=30s
 
 networks:
   kademlia_network:

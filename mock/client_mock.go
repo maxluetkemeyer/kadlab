@@ -3,6 +3,7 @@ package mock
 import (
 	"context"
 	"d7024e_group04/internal/kademlia/contact"
+	"d7024e_group04/internal/kademlia/model"
 	"fmt"
 )
 
@@ -33,10 +34,17 @@ func (c *mockClient) SendFindNode(ctx context.Context, contactWeRequest, contact
 	panic("TODO")
 }
 
-func (c *mockClient) SendFindValue(ctx context.Context, contactWeRequest *contact.Contact, hash string) ([]*contact.Contact, string, error) {
+func (c *mockClient) SendFindValue(ctx context.Context, contactWeRequest *contact.Contact, hash string) (candidates []*contact.Contact, dataObject model.FindValueSuccessfulResponse, err error) {
 	panic("TODO")
 }
 
-func (c *mockClient) SendStore(ctx context.Context, contactWeRequest *contact.Contact, data string) error {
+func (c *mockClient) SendStore(ctx context.Context, contactWeRequest *contact.Contact, data string, originalUploader *contact.Contact) error {
+	panic("TODO")
+}
+func (c *mockClient) SendRefreshTTL(ctx context.Context, key string, contactWeRequest *contact.Contact) error {
+	panic("TODO")
+}
+
+func (c *mockClient) SendNewStoredLocation(ctx context.Context, key string, originalUploader, newContactStoringData *contact.Contact) error {
 	panic("TODO")
 }

@@ -2,6 +2,7 @@ package node
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync/atomic"
 	"testing"
@@ -10,6 +11,7 @@ import (
 	"d7024e_group04/env"
 	"d7024e_group04/internal/kademlia/contact"
 	"d7024e_group04/internal/kademlia/kademliaid"
+	"d7024e_group04/internal/kademlia/model"
 	"d7024e_group04/internal/kademlia/routingtable"
 	"d7024e_group04/internal/server"
 	"d7024e_group04/internal/store"
@@ -95,8 +97,8 @@ func populateTestNodes() map[string]*TestNode {
 }
 
 type ClientMock struct {
-	me        *contact.Contact
-	testNodes map[string]*TestNode
+	me                     *contact.Contact
+	testNodes              map[string]*TestNode
 	findNodeCountUntilFail int
 	findNodeSuccesfulCount atomic.Uint32
 }
@@ -110,14 +112,23 @@ func newClientMock(testNodes map[string]*TestNode, me *contact.Contact) *ClientM
 
 // Set the number of requests that will success until one fails
 // Eg. Setting it to 1 will make all requests fail, while
-//     setting it to 3 will make 2 requests work and 1 fail.
+//
+//	setting it to 3 will make 2 requests work and 1 fail.
+//
 // Setting it to 0 will disable this feature
 func (c *ClientMock) SetFindNodeSuccesfulCount(count int) {
 	c.findNodeCountUntilFail = count
 }
 
 func (c *ClientMock) SendPing(ctx context.Context, targetIpWithPort string) (*contact.Contact, error) {
-	return nil, fmt.Errorf("should not be used")
+	targetIpWithoutPort := targetIpWithPort[:len(targetIpWithPort)-6]
+
+	for _, node := range c.testNodes {
+		if node.contact.Address == targetIpWithoutPort {
+			return node.contact, nil
+		}
+	}
+	return nil, errors.New("unable to ping any contacts")
 }
 
 func (c *ClientMock) SendFindNode(ctx context.Context, contactWeRequest, contactWeAreSearchingFor *contact.Contact) ([]*contact.Contact, error) {
@@ -132,22 +143,36 @@ func (c *ClientMock) SendFindNode(ctx context.Context, contactWeRequest, contact
 	return candidateNode.routingTable.FindClosestContacts(contactWeAreSearchingFor.ID, env.BucketSize), nil
 }
 
-func (c *ClientMock) SendFindValue(ctx context.Context, contactWeRequest *contact.Contact, hash string) ([]*contact.Contact, string, error) {
+func (c *ClientMock) SendFindValue(ctx context.Context, contactWeRequest *contact.Contact, hash string) (candidates []*contact.Contact, dataObject model.FindValueSuccessfulResponse, err error) {
 	candidateNode := c.testNodes[contactWeRequest.Address]
 
 	value, err := candidateNode.store.GetValue(hash)
 	if err != nil {
 		hashKademliaID := kademliaid.NewKademliaID(hash)
-		return candidateNode.routingTable.FindClosestContacts(hashKademliaID, env.BucketSize), "", nil
+		return candidateNode.routingTable.FindClosestContacts(hashKademliaID, env.BucketSize), dataObject, nil
 	}
-
-	return nil, value, nil
+	dataObject = model.FindValueSuccessfulResponse{
+		DataValue:        value.Data,
+		NodeWithValue:    candidateNode.contact,
+		OriginalUploader: value.Contact,
+	}
+	return nil, dataObject, nil
 }
 
-func (c *ClientMock) SendStore(ctx context.Context, contactWeRequest *contact.Contact, data string) error {
+func (c *ClientMock) SendStore(ctx context.Context, contactWeRequest *contact.Contact, data string, originalUploader *contact.Contact) error {
 	candidateNode := c.testNodes[contactWeRequest.Address]
 	key := kademliaid.NewKademliaIDFromData(data)
-	candidateNode.store.SetValue(key.String(), data, time.Hour)
+	candidateNode.store.SetValue(key.String(), data, time.Hour, originalUploader)
+	return nil
+}
+
+func (c *ClientMock) SendRefreshTTL(ctx context.Context, key string, contactWeRequest *contact.Contact) error {
+	panic("TODO")
+}
+
+func (c *ClientMock) SendNewStoredLocation(ctx context.Context, key string, originalUploader, newContactStoringData *contact.Contact) error {
+	candidateNode := c.testNodes[originalUploader.Address]
+	candidateNode.store.AddStoreLocation(key, newContactStoringData)
 	return nil
 }
 

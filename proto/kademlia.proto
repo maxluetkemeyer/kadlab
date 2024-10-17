@@ -2,6 +2,7 @@ syntax = "proto3";
 
 option go_package = "d7024e_group04/proto";
 
+import "google/protobuf/empty.proto";
 package proto;
 
 service Kademlia {
@@ -9,12 +10,26 @@ service Kademlia {
     rpc FindNode (FindNodeRequest) returns (FindNodeResult) {}
     rpc FindValue (FindValueRequest) returns (FindValueResult) {}
     rpc Store (StoreRequest) returns (StoreResult) {}
+    rpc NewStoreLocation (NewStoreLocationRequest) returns (google.protobuf.Empty) {}
+    rpc RefreshTTL (RefreshTTLRequest) returns (google.protobuf.Empty) {}
+}
+
+message NewStoreLocationRequest {
+    string Key = 1;
+    Node NewStoreLocationContact = 2;
+    Node RequestingNode = 3;
+}
+
+message RefreshTTLRequest {
+    string Key = 1;
+    Node RequestingNode = 2;
 }
 
 message StoreRequest {
     bytes Key = 1;
     string Value = 2;
-    Node RequestingNode = 3;
+    Node OriginalUploader = 3;
+    Node RequestingNode = 4;
 }
 
 message FindValueRequest {
@@ -40,9 +55,14 @@ message FindNodeResult {
     repeated Node Nodes = 1;
 }
 
+message DataObject {
+    string Data = 1;
+    Node OriginalUploader = 2;
+}
+
 message FindValueResult {
     oneof Value {
         FindNodeResult Nodes = 1;
-        string Data = 2;
+        DataObject DataObject = 2;
     }
 }

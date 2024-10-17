@@ -3,6 +3,7 @@ package node
 import (
 	"context"
 	"d7024e_group04/internal/kademlia/kademliaid"
+	"d7024e_group04/internal/kademlia/model"
 	"testing"
 	"time"
 )
@@ -14,6 +15,8 @@ func TestNode_PutObject(t *testing.T) {
 	node := Node{
 		RoutingTable: testNodes[":18"].routingTable,
 		Client:       newClientMock(testNodes, testNodes[":18"].contact),
+		Store:        testNodes[":18"].store,
+		RefreshChan:  make(chan model.RefreshTTLRequest, 1),
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -65,8 +68,8 @@ func TestNode_GetObject(t *testing.T) {
 	data := "some_data"
 	key := kademliaid.NewKademliaIDFromData(data).String()
 
-	node.Store.SetValue(key, data, time.Hour)
-	node2.Store.SetValue(key, data, time.Hour)
+	node.Store.SetValue(key, data, time.Hour, nil)
+	node2.Store.SetValue(key, data, time.Hour, nil)
 
 	t.Run("find data on sending node", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -97,7 +100,7 @@ func TestNode_GetObject(t *testing.T) {
 	data2 := "some_other_data"
 	key2AsKademliaID := kademliaid.NewKademliaIDFromData(data2)
 
-	node2.Store.SetValue(key2AsKademliaID.String(), data2, time.Hour)
+	node2.Store.SetValue(key2AsKademliaID.String(), data2, time.Hour, node.Me())
 	t.Run("find data on another node", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
@@ -135,11 +138,48 @@ func TestNode_GetObject(t *testing.T) {
 			if err != nil {
 				continue
 			}
-			if val == data2 {
+			if val.Data == data2 {
 				return
 			}
 		}
 
 		t.Fatalf("did not replicate correctly")
 	})
+}
+
+func TestNode_pingIPsAndGetContact(t *testing.T) {
+	testNodes := populateTestNodes()
+
+	node := Node{
+		RoutingTable: testNodes[":18"].routingTable,
+		Client:       newClientMock(testNodes, testNodes[":18"].contact),
+	}
+
+	ips := []string{"invalid_ip", one.Address}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	contact, err := node.pingIPsAndGetContact(ctx, ips)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	if contact.Address != one.Address {
+		t.Fatalf("invalid ip returned, expected %v, got %v", one.Address, contact.Address)
+	}
+}
+
+func TestNode_removeAddress(t *testing.T) {
+	ips := []string{"127.0.0.1", "127.0.0.2"}
+
+	filteredIps := removeAddress(ips, "127.0.0.1:50051")
+	if len(filteredIps) != 1 {
+		t.Fatalf("wrong number of ips, expected 1, got %v", len(filteredIps))
+	}
+
+	if filteredIps[0] != ips[1] {
+		t.Fatalf("invalid ip, expected %v, got %v", ips[1], filteredIps)
+	}
+
 }

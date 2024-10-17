@@ -7,6 +7,7 @@ import (
 	"d7024e_group04/internal/kademlia/kademliaid"
 	"d7024e_group04/internal/kademlia/routingtable"
 	"d7024e_group04/internal/store"
+	"d7024e_group04/internal/utils"
 	pb "d7024e_group04/proto"
 	"encoding/hex"
 	"fmt"
@@ -14,6 +15,7 @@ import (
 	"net"
 
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 // Server represents the node grpc server
@@ -91,4 +93,23 @@ func (s *Server) FindNode(ctx context.Context, request *pb.FindNodeRequest) (*pb
 	}
 
 	return &pb.FindNodeResult{Nodes: nodes}, nil
+}
+
+func (s *Server) RefreshTTL(ctx context.Context, request *pb.RefreshTTLRequest) (*emptypb.Empty, error) {
+	requestingNodeID := kademliaid.NewKademliaIDFromBytes([env.IDLength]byte(request.RequestingNode.ID))
+	senderContact := contact.NewContact(requestingNodeID, request.RequestingNode.IPWithPort)
+	s.routingTable.AddContact(senderContact)
+
+	s.store.SetTTL(request.Key, env.TTL)
+
+	return nil, nil
+}
+
+func (s *Server) NewStoreLocation(ctx context.Context, request *pb.NewStoreLocationRequest) (*emptypb.Empty, error) {
+	requestingNodeID := kademliaid.NewKademliaIDFromBytes([env.IDLength]byte(request.RequestingNode.ID))
+	senderContact := contact.NewContact(requestingNodeID, request.RequestingNode.IPWithPort)
+	s.routingTable.AddContact(senderContact)
+
+	s.store.AddStoreLocation(request.Key, utils.PbNodeToContact(request.NewStoreLocationContact))
+	return nil, nil
 }

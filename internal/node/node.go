@@ -25,12 +25,15 @@ type NodeHandler interface {
 	Bootstrap(rootCtx context.Context) error
 	PutObject(ctx context.Context, data string) (hashAsHex string, err error)
 	GetObject(rootCtx context.Context, hash string) (FindValueSuccessfulResponse *model.FindValueSuccessfulResponse, candidates []*contact.Contact, err error)
+	Forget(hash string)
 }
 
 type Node struct {
+	sync.RWMutex
 	Client       network.ClientRPC
 	RoutingTable *routingtable.RoutingTable
 	Store        store.TTLStore
+	RefreshChan  chan model.RefreshTTLRequest
 	kNet         network.Network
 }
 
@@ -39,6 +42,7 @@ func New(client network.ClientRPC, routingTable *routingtable.RoutingTable, stor
 		Client:       client,
 		RoutingTable: routingTable,
 		Store:        store,
+		RefreshChan:  make(chan model.RefreshTTLRequest, 10),
 		kNet:         kNet,
 	}
 }
@@ -101,6 +105,8 @@ func (n *Node) Bootstrap(rootCtx context.Context) error {
 
 	logger.Debug("FOUND NODES", slog.Any("nodes", closestContacts))
 
+	go n.TTLRefresher(rootCtx)
+
 	// Check for bucket refreshes
 	go n.checkBucketRefresh(rootCtx)
 
@@ -129,7 +135,7 @@ func (n *Node) refreshBucket(ctx context.Context, bck *bucket.Bucket) {
 	if err != nil {
 		log.Printf("unable to generate random number, err=%v", err)
 		log.Printf("using bck.Len()-1 as random number")
-		bigRandomNumber = big.NewInt(int64(bck.Len()-1))
+		bigRandomNumber = big.NewInt(int64(bck.Len() - 1))
 	}
 
 	randomNumber := int(bigRandomNumber.Int64())
@@ -165,9 +171,11 @@ func (n *Node) PutObject(ctx context.Context, data string) (hashAsHex string, er
 
 		go func() {
 			defer wg.Done()
-			err := n.Client.SendStore(ctx, contact, data)
+			err := n.Client.SendStore(ctx, contact, data, n.Me())
 			if err != nil {
 				errChan <- err
+			} else {
+				n.Store.AddStoreLocation(hash.String(), contact)
 			}
 		}()
 	}
@@ -178,6 +186,8 @@ func (n *Node) PutObject(ctx context.Context, data string) (hashAsHex string, er
 	for err := range errChan {
 		slog.Warn("SendStore error", slog.Any("err", err))
 	}
+
+	n.RefreshChan <- model.RefreshTTLRequest{Key: hash.String(), TTL: env.TTL}
 
 	return hash.String(), nil
 }

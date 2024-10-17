@@ -5,6 +5,7 @@ import (
 	"d7024e_group04/env"
 	"d7024e_group04/internal/kademlia/contact"
 	"d7024e_group04/internal/kademlia/kademliaid"
+	"d7024e_group04/internal/utils"
 	pb "d7024e_group04/proto"
 	"encoding/hex"
 	"fmt"
@@ -29,7 +30,7 @@ func (s *Server) Store(ctx context.Context, content *pb.StoreRequest) (*pb.Store
 	}
 
 	hexKey := hex.EncodeToString(key)
-	s.store.SetValue(hexKey, value, env.TTL)
+	s.store.SetValue(hexKey, value, env.TTL, utils.PbNodeToContact(content.OriginalUploader))
 
 	return &pb.StoreResult{
 		Success: true,

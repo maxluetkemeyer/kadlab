@@ -5,6 +5,8 @@ import (
 	"d7024e_group04/env"
 	"d7024e_group04/internal/kademlia/contact"
 	"d7024e_group04/internal/kademlia/kademliaid"
+	"d7024e_group04/internal/kademlia/model"
+	"d7024e_group04/internal/utils"
 	pb "d7024e_group04/proto"
 	"fmt"
 	"log"
@@ -49,7 +51,7 @@ func (c *Client) SendPing(ctx context.Context, targetIpWithPort string) (*contac
 	}
 	defer conn.Close()
 
-	payload := contactToPbNode(c.me)
+	payload := utils.ContactToPbNode(c.me)
 
 	responseNode, err := kademliaClient.Ping(ctx, payload)
 
@@ -57,7 +59,7 @@ func (c *Client) SendPing(ctx context.Context, targetIpWithPort string) (*contac
 		return nil, fmt.Errorf("failed to ping address %v, err: %v", targetIpWithPort, err)
 	}
 
-	contact := pbNodeToContact(responseNode)
+	contact := utils.PbNodeToContact(responseNode)
 
 	return contact, nil
 }
@@ -72,7 +74,7 @@ func (c *Client) SendFindNode(ctx context.Context, contactWeRequest, contactWeAr
 
 	payload := &pb.FindNodeRequest{
 		TargetID:       contactWeAreSearchingFor.ID.Bytes(),
-		RequestingNode: contactToPbNode(c.me),
+		RequestingNode: utils.ContactToPbNode(c.me),
 	}
 
 	resp, err := kademliaClient.FindNode(ctx, payload)
@@ -97,42 +99,48 @@ func (c *Client) SendFindNode(ctx context.Context, contactWeRequest, contactWeAr
 
 // SendFindValue sends a FindNode rpc call to the target contact with a hash value.
 // Returns the data if it is found on the target contact, otherwise a slice of candidate nodes closest to the hash value.
-func (c *Client) SendFindValue(ctx context.Context, contactWeRequest *contact.Contact, hash string) (candidates []*contact.Contact, data string, err error) {
+func (c *Client) SendFindValue(ctx context.Context, contactWeRequest *contact.Contact, hash string) (
+	candidates []*contact.Contact, dataObject model.FindValueSuccessfulResponse, err error) {
 	conn, kademliaClient, err := c.connectTo(contactWeRequest.Address)
 	if err != nil {
-		return nil, "", err
+		return nil, dataObject, err
 	}
 	defer conn.Close()
 
 	payload := &pb.FindValueRequest{
 		Hash:           kademliaid.NewKademliaID(hash).Bytes(),
-		RequestingNode: contactToPbNode(c.me),
+		RequestingNode: utils.ContactToPbNode(c.me),
 	}
 
 	resp, err := kademliaClient.FindValue(ctx, payload)
 
 	if err != nil {
-		return nil, "", fmt.Errorf("rpc server returned err: %v", err)
+		return nil, dataObject, fmt.Errorf("rpc server returned err: %v", err)
 	}
 
 	switch respValue := resp.Value.(type) {
-	case *pb.FindValueResult_Data:
-		return nil, respValue.Data, nil
+	case *pb.FindValueResult_DataObject:
+		dataObject = model.FindValueSuccessfulResponse{
+			DataValue:        respValue.DataObject.Data,
+			NodeWithValue:    contactWeRequest,
+			OriginalUploader: utils.PbNodeToContact(respValue.DataObject.OriginalUploader),
+		}
+		return nil, dataObject, nil
 
 	case *pb.FindValueResult_Nodes:
 		candidates := make([]*contact.Contact, 0, len(respValue.Nodes.Nodes))
 		for _, node := range respValue.Nodes.Nodes {
-			candidates = append(candidates, pbNodeToContact(node))
+			candidates = append(candidates, utils.PbNodeToContact(node))
 		}
 
-		return candidates, "", nil
+		return candidates, dataObject, nil
 
 	default:
-		return nil, "", fmt.Errorf("response type invalid, resp: %v", respValue)
+		return nil, dataObject, fmt.Errorf("response type invalid, resp: %v", respValue)
 	}
 }
 
-func (c *Client) SendStore(ctx context.Context, contactWeRequest *contact.Contact, data string) error {
+func (c *Client) SendStore(ctx context.Context, contactWeRequest *contact.Contact, data string, originalUploader *contact.Contact) error {
 	conn, kademliaClient, err := c.connectTo(contactWeRequest.Address)
 	if err != nil {
 		return err
@@ -143,9 +151,10 @@ func (c *Client) SendStore(ctx context.Context, contactWeRequest *contact.Contac
 	key := kademliaid.NewKademliaIDFromData(data)
 
 	storeRequest := &pb.StoreRequest{
-		Key:            key.Bytes(),
-		Value:          data,
-		RequestingNode: contactToPbNode(c.me),
+		Key:              key.Bytes(),
+		Value:            data,
+		OriginalUploader: utils.ContactToPbNode(originalUploader),
+		RequestingNode:   utils.ContactToPbNode(c.me),
 	}
 
 	storeResult, err := kademliaClient.Store(ctx, storeRequest)
@@ -157,10 +166,37 @@ func (c *Client) SendStore(ctx context.Context, contactWeRequest *contact.Contac
 	return nil
 }
 
-func pbNodeToContact(node *pb.Node) *contact.Contact {
-	return contact.NewContact((kademliaid.KademliaID)(node.ID), node.IPWithPort)
+func (c *Client) SendRefreshTTL(ctx context.Context, key string, contactWeRequest *contact.Contact) error {
+	conn, kademliaClient, err := c.connectTo(contactWeRequest.Address)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	refreshTTLRequest := &pb.RefreshTTLRequest{
+		Key:            key,
+		RequestingNode: utils.ContactToPbNode(c.me),
+	}
+
+	_, err = kademliaClient.RefreshTTL(ctx, refreshTTLRequest)
+
+	return err
 }
 
-func contactToPbNode(contact *contact.Contact) *pb.Node {
-	return &pb.Node{ID: contact.ID.Bytes(), IPWithPort: contact.Address}
+func (c *Client) SendNewStoredLocation(ctx context.Context, key string, originalUploader, newContactStoringData *contact.Contact) error {
+	conn, kademliaClient, err := c.connectTo(originalUploader.Address)
+	if err != nil {
+		return err
+	}
+
+	defer conn.Close()
+	newStoredLocationRequest := &pb.NewStoreLocationRequest{
+		Key:                     key,
+		NewStoreLocationContact: utils.ContactToPbNode(newContactStoringData),
+		RequestingNode:          utils.ContactToPbNode(c.me),
+	}
+
+	_, err = kademliaClient.NewStoreLocation(ctx, newStoredLocationRequest)
+
+	return err
 }

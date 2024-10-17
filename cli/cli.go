@@ -70,8 +70,10 @@ func cliLogic(ctx context.Context, cancelCtx context.CancelFunc, errChan chan er
 
 	case "exit":
 		cancelCtx()
+
 	case "forget":
-		panic("TODO")
+		node.Forget(command[1])
+
 	default:
 		fmt.Println("invalid command")
 	}
@@ -79,14 +81,14 @@ func cliLogic(ctx context.Context, cancelCtx context.CancelFunc, errChan chan er
 }
 
 func getCommand(ctx context.Context, node node.NodeHandler, hash string) (string, error) {
-	val, candidates, err := node.GetObject(ctx, hash)
+	dataObject, candidates, err := node.GetObject(ctx, hash)
 
 	if err != nil {
 		return "", fmt.Errorf("failed to get value and candidates, err: %v", err)
 	}
 
-	if val != nil {
-		return fmt.Sprintf("value: %v, found in node: %v", val.DataValue, val.NodeWithValue), nil
+	if dataObject != nil {
+		return fmt.Sprintf("value: %v, found in node: %v, original uploader: %v", dataObject.DataValue, dataObject.NodeWithValue, dataObject.OriginalUploader), nil
 	}
 
 	if candidates != nil {

@@ -7,6 +7,7 @@ import (
 	"d7024e_group04/internal/kademlia/kademliaid"
 	"d7024e_group04/internal/kademlia/routingtable"
 	"d7024e_group04/internal/store"
+	"d7024e_group04/internal/utils"
 	"fmt"
 	"reflect"
 	"testing"
@@ -147,7 +148,7 @@ func TestServer_FindValue(t *testing.T) {
 		}
 
 		switch result.Value.(type) {
-		case *pb.FindValueResult_Data:
+		case *pb.FindValueResult_DataObject:
 			t.Fatalf("got data in result, %v", result)
 
 		case *pb.FindValueResult_Nodes:
@@ -159,7 +160,8 @@ func TestServer_FindValue(t *testing.T) {
 	})
 
 	t.Run("value exists", func(t *testing.T) {
-		srv.store.SetValue(hash.String(), data, time.Hour)
+		senderContact := contact.NewContact(SenderID, SenderAddress)
+		srv.store.SetValue(hash.String(), data, time.Hour, senderContact)
 
 		request := &pb.FindValueRequest{
 			Hash:           hash.Bytes(),
@@ -176,9 +178,9 @@ func TestServer_FindValue(t *testing.T) {
 		}
 
 		switch resultValue := result.Value.(type) {
-		case *pb.FindValueResult_Data:
-			if resultValue.Data != data {
-				t.Fatalf("wrong data returned, expected %v, got %v", data, resultValue.Data)
+		case *pb.FindValueResult_DataObject:
+			if resultValue.DataObject.Data != data {
+				t.Fatalf("wrong data returned, expected %v, got %v", data, resultValue.DataObject.Data)
 			}
 
 		case *pb.FindValueResult_Nodes:
@@ -191,6 +193,8 @@ func TestServer_FindValue(t *testing.T) {
 }
 
 func TestServer_Store(t *testing.T) {
+	senderContact := contact.NewContact(SenderID, SenderAddress)
+
 	srv := initServer()
 
 	data := "some data"
@@ -202,9 +206,10 @@ func TestServer_Store(t *testing.T) {
 
 		result, err := srv.Store(ctx,
 			&pb.StoreRequest{
-				Key:            key.Bytes(),
-				Value:          data,
-				RequestingNode: &pb.Node{ID: SenderID.Bytes(), IPWithPort: SenderAddress}})
+				Key:              key.Bytes(),
+				Value:            data,
+				OriginalUploader: utils.ContactToPbNode(senderContact),
+				RequestingNode:   &pb.Node{ID: SenderID.Bytes(), IPWithPort: SenderAddress}})
 
 		if err != nil || !result.Success {
 			t.Fatalf("rpc Store failed, %v", err)
@@ -216,7 +221,7 @@ func TestServer_Store(t *testing.T) {
 			t.Fatalf("GetValue failed, %v", err)
 		}
 
-		if dataFromServer != data {
+		if dataFromServer.Data != data {
 			t.Fatalf("server stored wrong data, expected %v, got %v", data, dataFromServer)
 		}
 	})
@@ -236,6 +241,61 @@ func TestServer_Store(t *testing.T) {
 		}
 	})
 
+}
+
+func TestServer_RefreshTTL(t *testing.T) {
+	srv := initServer()
+	key := "hash_key"
+
+	ttlRequest := &pb.RefreshTTLRequest{
+		Key:            key,
+		RequestingNode: &pb.Node{ID: SenderID.Bytes(), IPWithPort: SenderAddress},
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	go TimeoutContext(ctx, cancel)
+
+	_, err := srv.RefreshTTL(ctx, ttlRequest)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	ttl := srv.store.GetTTL(key)
+	if ttl.Seconds() <= 0 {
+		t.Fatalf("invalid ttl, %v", ttl)
+	}
+
+}
+
+func TestServer_NewStoreLocation(t *testing.T) {
+	srv := initServer()
+	key := "hash_key"
+
+	newStoreContact := contact.NewContact(kademliaid.NewRandomKademliaID(), "address")
+
+	storeLocRequest := &pb.NewStoreLocationRequest{
+		Key:                     key,
+		NewStoreLocationContact: utils.ContactToPbNode(newStoreContact),
+		RequestingNode:          &pb.Node{ID: SenderID.Bytes(), IPWithPort: SenderAddress},
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	go TimeoutContext(ctx, cancel)
+
+	_, err := srv.NewStoreLocation(ctx, storeLocRequest)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	locationContacts := srv.store.GetStoreLocations(key)
+
+	if len(locationContacts) != 1 {
+		t.Fatalf("invalid number of contacts")
+	}
+
+	if !locationContacts[0].ID.Equals(newStoreContact.ID) {
+		t.Fatalf("invalid contact, expected %v, got %v", locationContacts[0], newStoreContact)
+	}
 }
 
 func fillRoutingTable(count int, routingTable *routingtable.RoutingTable, blacklist kademliaid.KademliaID) {
